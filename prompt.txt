@@ -1,0 +1,8 @@
+	• This is my Upload.jsx component
+	• I want you to add a month and financial year selector on the top which I can select.
+	• Under that I need these sections  [Over All Review, Fire, Engineering, Marine] to be displayed as tabs in a neat layout.
+	• When I click on each tab , it should show the relevant buttons as shown in the Image.
+	• When I click on a button, it should show a small window with a button called "Download Template" to download the existing template of that particular name from the "src/templates" folder. I should also show a browse field to upload a  excel file from the system and a cancel button at top right corner of the window.
+	• Just implement all these things for now with some room for later complicated code implementation and give me the complete working code ready to paste.
+	• Make the UI to Look so clean and neat with professional stylings.
+	• You can refer the Tables.png for data of each sections.
