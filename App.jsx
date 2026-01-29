@@ -10,6 +10,8 @@ import Engineering from './components/Engineering';
 import Fire from './components/Fire';     
 import MonthYearSelector from './components/MonthYearSelector';
 
+import Upload from './components/Upload';
+
 function App() {
   const [selectedOption, setSelectedOption] = useState('Home')
   const [selectedDate, setSelectedDate] = useState({ month: 'May', year: '2025-26' })
@@ -44,13 +46,16 @@ function App() {
         return <Engineering selectedDate={selectedDate} />
       case 'Fire':
         return <Fire selectedDate={selectedDate} />
+      // case 'Upload':
+      //   return (
+      //     <div className="flex flex-col items-center justify-center p-8">
+      //       <h2 className="text-xl font-semibold mb-6">Upload Data</h2>
+      //       <MonthYearSelector onChange={handleDateChange} />
+      //     </div>
+      //   );
       case 'Upload':
-        return (
-          <div className="flex flex-col items-center justify-center p-8">
-            <h2 className="text-xl font-semibold mb-6">Upload Data</h2>
-            <MonthYearSelector onChange={handleDateChange} />
-          </div>
-        );
+        return <Upload/>
+
       default:
         return (
           <div className="text-center py-12">
