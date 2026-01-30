@@ -1,15 +1,12 @@
-	• This work is for OverAllReview.jsx component's  "LOB wise NOP, GWP and GIC:GEP (GWP in Mn)"Graph.
-	• First remove the hardcoded  month and year (May 2024) from the chart headings and dropdown.
-	• The chart should fetch the data from "src/data/Dwellings.json" and "src/data/LOB_AND_SEGMENT_WISE_DATA.json" files.
-	• For the time period dropdown, it should use the data from these json files.
-	• For the chart's X-axis use the LOB. There is a special case that the "FIRE" should be split into 2 as "FIRE (Dwellings)" and "FIRE (Non-Dwellings)".
-For the "Fire (Dwellings)" part use the "src/data/Dwellings.json" according to the relevant year data. 
-	For the "Fire(Non-Dwellings)" part use just subtract the "Fire(Dwellings)" data from the "Fire" src/data/LOB_AND_SEGMENT_WISE_DATA.json data.
-	• For the chart's Y-axis - The "Total Net Pol" Should be displayed as NOP in Green Bar, The "Total prem" should be displayed as "GWP" in Blue Bar and the Total Claim incurred in period/Total Earned Prem should be displayed as "GIC:GEP" in red line.
-	• For the values of the chart. Display the NOP data as it is, For GWP it should roundoff the value and display only the 1st 3 digits, For the GIC:GEP value, multiply the divided value by 100 and display only the roundoff 1st 3 digits with % symbol at the end.
-	• At the footer of the Chart display this "
-	Fire is inclusive of Generic New NOP - 8,233 with GWP of Rs. 38 Mn. The drop in Misc. NOP and GWP is due to Burglary policies being issued under EPP Tiny (Fire).
-	*Engineering -  Commercial -  BAGMANE DEVELOPERS PRIVATE LTD - Rs. 14.88 Crs (Short Circuit Fire)"
-	• See this image for reference.
 
-Please dont add, change or remove any part of the code unnecessarily. Just implement the change's I've asked and give me the complete working code ready to paste.
+	• Everything works fine except for the GIC:GEP data in the FIRE (Dwellings) and FIRE (Non-Dwellings).
+	For eg:
+	   
+	"April, 2025-26 - December, 2025-26" data is showing 10% for FIRE (Dwellings) and 43% for FIRE(Non-Dwellings).
+	
+	But it should be 29% for FIRE (Dwellings) and 36% for FIRE(Non-Dwellings).
+	
+	• See this image for reference of the year "April, 2025-26 - December, 2025-26".
+	• Also change the font color of the dropdown to black.
+	• Don't show the Decimals in GWP data.
+
