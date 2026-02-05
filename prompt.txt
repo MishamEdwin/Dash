@@ -108,34 +108,4 @@
 
 
 
-{
-  "Time": "YTD December 2025",
-  "Brokers": [
-    {
-      "Broker Name": "Aon Risk Insurance Brokers India Private Limited",
-      "UW Sub Channel": {
-        "Commercial": {
-          "Engineering": 0.0,
-          "Fire": 0.0,
-          "Liability": 0.001112,
-          "Marine": 0.0,
-          "Miscellaneous": 0.0,
-          "Grand Total": 0.001112
-        }
-      }
-    },
-    {
-      "Broker Name": "Paavana Insurance Brokers Private Limited",
-      "UW Sub Channel": {
-        "Commercial": {
-          "Engineering": 0.0,
-          "Fire": 0.0,
-          "Liability": 0.112641,
-          "Marine": 0.0,
-          "Miscellaneous": 0.0,
-          "Grand Total": 0.112641
-        }
-      }
-    }
-  ]
-}
+"TIme":"YTD December 2025"{ "Broker Name":"Aon Risk Insurance Brokers India Private Limited"{ "UW Sub Channel":"Commercial"{ "Engineering": 0.279847, "Fire": 51.23454, "Liability": 0.305839, "Marine": 10.690943, "Miscellaneous": 0.040956, "Grand Total": 62.552124 }}}
