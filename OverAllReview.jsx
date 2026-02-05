@@ -1,141 +1,233 @@
 import { useState, useEffect } from 'react'; 
-import {  
-  Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,  
-  LineChart, Line, ComposedChart, PieChart, Pie, Cell  
+import { 
+Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+LineChart, Line, ComposedChart, PieChart, Pie, Cell 
 } from 'recharts'; 
 import '../styles/OverAllReview.css'; 
- 
 // Static configuration for LOB columns 
 const lobOrder = [ 
-  { key: 'FIRE', label: 'FIRE', colorClass: 'lob-fire' }, 
-  { key: 'ENGINEERING', label: 'ENGINEERING', colorClass: 'lob-engineering' }, 
-  { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colorClass: 'lob-miscellaneous' }, 
-  { key: 'MARINE', label: 'MARINE', colorClass: 'lob-marine' }, 
-  { key: 'LIABILITY', label: 'LIABILITY', colorClass: 'lob-liability' }, 
-  { key: 'OVERALL', label: 'OVERALL', colorClass: 'lob-overall' } 
+{ key: 'FIRE (Dwellings)', label: 'FIRE (Dwellings)', colorClass: 'lob-fire' }, 
+{ key: 'FIRE (Non-Dwellings)', label: 'FIRE (Non-Dwellings)', colorClass: 'lob-fire' }, 
+{ key: 'ENGINEERING', label: 'ENGINEERING', colorClass: 'lob-engineering' }, 
+{ key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colorClass: 'lob-miscellaneous' }, 
+{ key: 'MARINE', label: 'MARINE', colorClass: 'lob-marine' }, 
+{ key: 'LIABILITY', label: 'LIABILITY', colorClass: 'lob-liability' }, 
+{ key: 'OVERALL', label: 'OVERALL', colorClass: 'lob-overall' } 
 ]; 
  
 const OverAllReview = ({ selectedDate }) => { 
   // --- State Management --- 
-  const [allData, setAllData] = useState(null); 
+  const [lobRawData, setLobRawData] = useState([]); 
+  const [dwellingsRawData, setDwellingsRawData] = useState([]); 
+  const [allData, setAllData] = useState({});  
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
  
-  // Initialize dropdown states based on global selectedDate 
-  const [selectedLobPeriod, setSelectedLobPeriod] = useState( 
-    selectedDate?.month === 'July' ? 'YTD July 2025' :  
-    selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025' 
-  ); 
+  // Dynamic Dropdown & Chart Data 
+  const [availablePeriods, setAvailablePeriods] = useState([]); 
+  const [selectedLobPeriod, setSelectedLobPeriod] = useState(''); 
+  const [chartData, setChartData] = useState([]); 
  
-  const [selectedMatrixPeriod, setSelectedMatrixPeriod] = useState( 
-    selectedDate?.month === 'July' ? 'YTD July 2025' :  
-    selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025' 
-  ); 
- 
+  // Existing states for other sections 
+  const [selectedMatrixPeriod, setSelectedMatrixPeriod] = useState(''); 
   const [showGrowthPopup, setShowGrowthPopup] = useState(false); 
   const [popupPeriod, setPopupPeriod] = useState("Apr'24 - Mar'25"); 
  
-  // --- Data Fetching --- 
+  // --- Data Fetching (Robust Vite Glob Import) --- 
   useEffect(() => { 
-    const fetchData = async () => { 
+    const loadData = async () => { 
       try { 
         setLoading(true); 
-        const response = await fetch('/src/data/overall_review_data.json'); 
-        if (!response.ok) throw new Error('Failed to fetch data'); 
-        const data = await response.json(); 
-        setAllData(data); 
         setError(null); 
+ 
+        // Safely load all JSON files from the data directory 
+        const modules = import.meta.glob('../data/*.json', { eager: true }); 
+         
+        const getFile = (name) => { 
+          const key = Object.keys(modules).find(k => k.includes(name)); 
+          return key ? (modules[key].default || modules[key]) : null; 
+        }; 
+ 
+        const lobJson = getFile('LOB_AND_SEGMENT_WISE_DATA') || []; 
+        const dwellingsJson = getFile('Dwellings') || []; 
+        const overallJson = getFile('overall_review_data') || {}; 
+ 
+        setLobRawData(lobJson); 
+        setDwellingsRawData(dwellingsJson); 
+        setAllData(overallJson); 
+ 
+        // Initialize Dropdowns 
+        if (Array.isArray(lobJson) && lobJson.length > 0) { 
+          const periods = lobJson.map(item => item.Time); 
+          setAvailablePeriods(periods); 
+           
+          // Default to the period matching selectedDate month, or first available 
+          const match = periods.find(p => p.includes(selectedDate?.month)) || periods[0]; 
+          setSelectedLobPeriod(match); 
+          setSelectedMatrixPeriod(match); 
+        } 
+ 
       } catch (err) { 
-        console.error("Error loading review data:", err); 
-        setError("Failed to load data"); 
-        setAllData({});  
+        console.error("Error loading data:", err); 
+        setError("Failed to load data files."); 
       } finally { 
         setLoading(false); 
       } 
     }; 
  
-    fetchData(); 
-  }, []); 
- 
-  // Update local states when global selectedDate changes 
-  useEffect(() => { 
-    if (selectedDate?.month) { 
-      const defaultPeriod = selectedDate.month === 'July' ? 'YTD July 2025' :  
-                            selectedDate.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
-      setSelectedLobPeriod(defaultPeriod); 
-      setSelectedMatrixPeriod(defaultPeriod); 
-    } 
+    loadData(); 
   }, [selectedDate]); 
  
-  // --- Helper Functions & Dynamic Keys --- 
+  // --- Chart Data Processing --- 
+  useEffect(() => { 
+    if (!selectedLobPeriod || !lobRawData || lobRawData.length === 0) return; 
  
-  // Calculates the default key string based on the global date (for sections without their own dropdowns) 
-  const getDefaultKey = () => { 
-    return selectedDate?.month === 'July' ? 'YTD July 2025' :  
-           selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
-  }; 
+    // 1. Find Data for Selected Period 
+    const lobPeriodData = lobRawData.find(item => item.Time === selectedLobPeriod); 
+    const dwellingPeriodData = dwellingsRawData.find(item => item.Time === 
+selectedLobPeriod) || {}; 
  
+    if (!lobPeriodData) return; 
+ 
+    const getNum = (val) => val || 0; 
+ 
+    const processedChartData = []; 
+    let totalNop = 0; 
+    let totalPrem = 0; 
+    let totalEarned = 0; 
+    let totalClaims = 0; 
+ 
+    // --- Special Logic: FIRE Split --- 
+     
+    // A. Fire (Dwellings) - Directly from Dwellings.json 
+    const fireDwelling = { 
+      label: 'FIRE (Dwellings)', 
+      nop: getNum(dwellingPeriodData["Total Net Pol"]), 
+      prem: getNum(dwellingPeriodData["Total Prem"]), 
+      earned: getNum(dwellingPeriodData["Total Earned Prem"]), 
+      claims: getNum(dwellingPeriodData["Total Claim incurred in period"]), 
+    }; 
+ 
+    // B. Total Fire - From LOB Data 
+    const totalFireLOB = lobPeriodData.LOB?.['FIRE'] || {}; 
+    const totalFire = { 
+      nop: getNum(totalFireLOB["Total Net Pol"]), 
+      prem: getNum(totalFireLOB["Total Prem"]), 
+      earned: getNum(totalFireLOB["Total Earned Prem"]), 
+      claims: getNum(totalFireLOB["Total Claim incurred in period"]), 
+    }; 
+ 
+    // C. Fire (Non-Dwellings) = Total Fire - Dwellings 
+    const fireNonDwelling = { 
+      label: 'FIRE (Non-Dwellings)', 
+      nop: totalFire.nop - fireDwelling.nop, 
+      prem: totalFire.prem - fireDwelling.prem, 
+      earned: totalFire.earned - fireDwelling.earned, 
+      claims: totalFire.claims - fireDwelling.claims, 
+    }; 
+ 
+    // Add Fire Rows to Chart 
+    [fireDwelling, fireNonDwelling].forEach(item => { 
+      processedChartData.push({ 
+        lob: item.label, 
+        nop: item.nop, 
+        // GWP: Divide by 1M and Round to Integer (No decimals) 
+        gwp_millions: Math.round(item.prem / 1000000),  
+        // GIC:GEP: (Claims / Earned) * 100 
+        gic_gep: item.earned !== 0 ? Math.round((item.claims / item.earned) * 100) : 0, 
+        raw_gwp: item.prem 
+      }); 
+      totalNop += item.nop; 
+      totalPrem += item.prem; 
+      totalEarned += item.earned; 
+      totalClaims += item.claims; 
+    }); 
+ 
+    // --- Other LOBs --- 
+    const otherLobs = ['ENGINEERING', 'MISCELLANEOUS', 'MARINE', 'LIABILITY']; 
+     
+    otherLobs.forEach(key => { 
+      const data = lobPeriodData.LOB?.[key] || {}; 
+      const nop = getNum(data["Total Net Pol"]); 
+      const prem = getNum(data["Total Prem"]); 
+      const earned = getNum(data["Total Earned Prem"]); 
+      const claims = getNum(data["Total Claim incurred in period"]); 
+ 
+      // Format Label (e.g., MISCELLANEOUS -> Misc.) 
+      let label = key; 
+      if (key === 'MISCELLANEOUS') label = 'Misc.'; 
+      else label = key.charAt(0) + key.slice(1).toLowerCase(); // Marine, Liability 
+ 
+      processedChartData.push({ 
+        lob: label, 
+        nop: nop, 
+        gwp_millions: Math.round(prem / 1000000), 
+        gic_gep: earned !== 0 ? Math.round((claims / earned) * 100) : 0, 
+        raw_gwp: prem 
+      }); 
+ 
+      totalNop += nop; 
+      totalPrem += prem; 
+      totalEarned += earned; 
+      totalClaims += claims; 
+    }); 
+ 
+    // --- OVERALL / Total --- 
+    processedChartData.push({ 
+      lob: 'Total', 
+      nop: totalNop, 
+      gwp_millions: Math.round(totalPrem / 1000000), 
+      gic_gep: totalEarned !== 0 ? Math.round((totalClaims / totalEarned) * 100) : 0 
+    }); 
+ 
+    setChartData(processedChartData); 
+ 
+  }, [selectedLobPeriod, lobRawData, dwellingsRawData]); 
+ 
+  // --- Helpers --- 
+  const getDefaultKey = () => selectedDate?.month === 'July' ? 'YTD July 2025' : 
+selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
   const getMonthName = () => selectedDate?.month || 'May'; 
- 
-  // Calculates the Broker period based on the Chart's specific dropdown selection 
-  const getBrokerPeriod = (period) => { 
-    if (period.includes('July')) return 'YTD July 2025'; 
-    if (period.includes('June')) return 'YTD June 2025'; 
-    return 'YTD May 2025'; 
+  const getBrokerPeriod = (p) => (p && p.includes('July')) ? 'YTD July 2025' : (p && 
+p.includes('June')) ? 'YTD June 2025' : 'YTD May 2025'; 
+  const getGicGepStyle = (val) => { 
+    const num = parseInt(val?.toString().replace('%', '') || 0); 
+    return num >= 90 ? { color: 'red' } : {}; 
   }; 
  
-  const getGicGepStyle = (gicGep) => { 
-    if (!gicGep) return {}; 
-    const numericValue = parseInt(gicGep.toString().replace('%', '')); 
-    return numericValue >= 90 ? { color: 'red' } : {}; 
-  }; 
- 
-  // --- Derived Data --- 
- 
-  // 1. Chart Data 
-  const lobData = allData?.lobDataMap?.[selectedLobPeriod] || []; 
- 
-  // 2. Broker Data (Linked to Chart Dropdown) 
+  // --- Derived Data for Tables --- 
   const brokerPeriod = getBrokerPeriod(selectedLobPeriod); 
   const brokerData = allData?.brokerDataMap?.[brokerPeriod] || []; 
  
-  // 3. Matrix Data 
   const segmentLobMatrix = allData?.segmentMatrixDataMap?.[selectedMatrixPeriod] || []; 
-  const segments = Array.from(new Set(segmentLobMatrix.map(row => row.uw_seg_map))); 
+  const segments = Array.from(new Set(segmentLobMatrix.map(r => r.uw_seg_map))); 
   const segMap = {}; 
-  segmentLobMatrix.forEach(row => { 
-    if (!segMap[row.uw_seg_map]) segMap[row.uw_seg_map] = {}; 
-    segMap[row.uw_seg_map][row.lob] = row; 
+  segmentLobMatrix.forEach(r => { 
+    if (!segMap[r.uw_seg_map]) segMap[r.uw_seg_map] = {}; 
+    segMap[r.uw_seg_map][r.lob] = r; 
   }); 
  
-  // 4. Other Sections (Linked to Global Date) 
   const currentKey = getDefaultKey(); 
   const lobGrowthData = allData?.lobGrowthDataMap?.[currentKey] || []; 
   const cordysTatData = allData?.cordysTatDataMap?.[currentKey] || []; 
   const fireUnderData = allData?.fireUnderInsuranceDataMap?.[currentKey] || []; 
    
-  // Inward Fac Logic 
   const inwardMonthKey = selectedDate?.month?.toLowerCase() || 'may'; 
   const inwardFacRaw = allData?.inwardFacDataMap?.[currentKey] || { [inwardMonthKey]: [], 
 ytd: [] }; 
   const inwardMonthData = inwardFacRaw[inwardMonthKey] || []; 
   const inwardYtdData = inwardFacRaw.ytd || []; 
  
-  // Bottom Grid Data 
   const newBusinessData = allData?.newBusinessDataMap?.[currentKey] || { commercial: [], 
 liability: [], sme: [] }; 
   const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
   const newInitiativesData = allData?.newInitiativesDataMap?.[currentKey] || ''; 
-   
   const popupData = allData?.popupDataMap?.[popupPeriod] || []; 
   const staticGrowth = allData?.staticGrowthDataMap?.[currentKey] || []; 
-  const chartNote = allData?.notes?.chartNote?.[currentKey] || ''; 
   const matrixNote = allData?.notes?.matrixNote?.[selectedMatrixPeriod] || ''; 
  
-  // --- Rendering --- 
- 
   if (loading) return <div className="or-loader-container"><div className="or-loader"></div></div>; 
-  if (error && !allData) return <div className="or-error-container"><h3>Error Loading Data</h3></div>; 
+  if (error) return <div className="or-error-container"><h3>{error}</h3></div>; 
  
   return ( 
     <div className="or-main"> 
@@ -151,53 +243,58 @@ liability: [], sme: [] };
               <select  
                 value={selectedLobPeriod}  
                 onChange={(e) => setSelectedLobPeriod(e.target.value)} 
-                style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', marginRight: '10px' }} 
+                style={{  
+                  padding: '4px 8px',  
+                  borderRadius: '4px',  
+                  border: '1px solid #ccc',  
+                  fontSize: '14px',  
+                  marginRight: '10px', 
+                  color: '#000',           // Set font color to black 
+                  backgroundColor: '#fff',  // Ensure background is white 
+                  fontWeight: '500' 
+                }} 
               > 
-                {selectedDate?.month === 'July' ? ( 
-                  <> 
-                    <option value="YTD July 2025">YTD July 2025</option> 
-                    <option value="YTD July 2024">YTD July 2024</option> 
-                    <option value="July 2025">July 2025</option> 
-                    <option value="July 2024">July 2024</option> 
-                  </> 
-                ) : selectedDate?.month === 'June' ? ( 
-                  <> 
-                    <option value="YTD June 2025">YTD June 2025</option> 
-                    <option value="YTD June 2024">YTD June 2024</option> 
-                    <option value="June 2025">June 2025</option> 
-                    <option value="June 2024">June 2024</option> 
-                  </> 
-                ) : ( 
-                  <> 
-                    <option value="YTD May 2025">YTD May 2025</option> 
-                    <option value="YTD May 2024">YTD May 2024</option> 
-                    <option value="May 2025">May 2025</option> 
-                    <option value="May 2024">May 2024</option> 
-                  </> 
-                )} 
+                {availablePeriods.length > 0 ? availablePeriods.map((period, index) => ( 
+                  <option key={index} value={period}>{period}</option> 
+                )) : <option>No Data Available</option>} 
               </select> 
             </div> 
           </div> 
           <div className="or-chart"> 
             <ResponsiveContainer width="100%" height="100%"> 
-              <ComposedChart data={lobData} margin={{ top: 15, right: 25, left: 15, bottom: 60 }}> 
+              <ComposedChart data={chartData} margin={{ top: 15, right: 25, left: 15, bottom: 60 }}> 
                 <CartesianGrid strokeDasharray="3 3" /> 
-                <XAxis dataKey="lob" angle={-45} textAnchor="end" height={70} fontSize={9} interval={0} /> 
+                <XAxis dataKey="lob" angle={-45} textAnchor="end" height={80} fontSize={9} interval={0} /> 
                 <YAxis yAxisId="left" orientation="left" scale="log" domain={[1, 10000000]} fontSize={9}  
-                  tickFormatter={(val) => val >= 1000000 ? `${val/1000000}M` : val >= 1000 ? `${val/1000}K` : val} /> 
-                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(val) => `${val}%`} fontSize={9} /> 
-                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : [Number(val).toLocaleString(), name]} /> 
+                  tickFormatter={(val) => val >= 1000000 ? `${val/1000000}M` : val >= 1000 ? `${val/1000}K` : 
+val} /> 
+                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} 
+fontSize={9} /> 
+                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : 
+[Number(val).toLocaleString(), name]} /> 
                 <Legend wrapperStyle={{ fontSize: '10px' }} /> 
                 <Bar yAxisId="left" dataKey="nop" fill="#30cd05" name="NOP" /> 
-                <Bar yAxisId="left" dataKey="gwp_millions" fill="#2563eb" name="GWP" /> 
-                <Line yAxisId="right" type="monotone" dataKey="gic_gep" stroke="#e30613" strokeWidth={2} dot={{r:3}} name="GIC:GEP" /> 
+                <Bar yAxisId="left" dataKey="gwp_millions" fill="#2563eb" name="GWP (Mn)" /> 
+                <Line yAxisId="right" type="monotone" dataKey="gic_gep" stroke="#e30613" strokeWidth={2} 
+dot={{r:3}} name="GIC:GEP"  
+                  label={({ x, y, value }) => ( 
+                    <text x={x} y={y - 10} fill="#e30613" fontSize={10} textAnchor="middle" 
+fontWeight="bold">{value}%</text> 
+                  )} 
+                /> 
               </ComposedChart> 
             </ResponsiveContainer> 
           </div> 
-          <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px' }} dangerouslySetInnerHTML={{ __html: chartNote }}></div> 
+          <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', 
+lineHeight: '1.4' }}> 
+            Fire is inclusive of Generic New NOP - 8,233 with GWP of Rs. 38 Mn. The drop in Misc. NOP and 
+GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br/> 
+            *Engineering -  Commercial -  BAGMANE DEVELOPERS PRIVATE LTD - Rs. 14.88 Crs (Short 
+Circuit Fire) 
+          </div> 
         </div> 
  
-        {/* Broker Table Section - Header dynamically linked to Chart Dropdown */} 
+        {/* Broker Table Section */} 
         <div className="or-broker-table-container"> 
           <div className="or-table-header"> 
             <h2 className="or-table-title"> 
@@ -219,8 +316,10 @@ liability: [], sme: [] };
               </thead> 
               <tbody className="or-table-tbody"> 
                 {brokerData.length > 0 ? brokerData.map((item, index) => ( 
-                  <tr key={index} className={`or-table-tr ${item.broker_name === 'Total GWP' ? 'or-table-tr-total' : ''} ${item.broker_name === 'Others' ? 'or-table-tr-others' : ''}`}> 
-                    <td className="or-table-td or-table-td-broker"><div className="or-table-broker-name" title={item.broker_name}>{item.broker_name}</div></td> 
+                  <tr key={index} className={`or-table-tr ${item.broker_name === 'Total GWP' ? 
+'or-table-tr-total' : ''} ${item.broker_name === 'Others' ? 'or-table-tr-others' : ''}`}> 
+                    <td className="or-table-td or-table-td-broker"><div className="or-table-broker-name" 
+title={item.broker_name}>{item.broker_name}</div></td> 
                     <td className="or-table-td">{item.uw_channel}</td> 
                     <td className="or-table-td">{item.fire}</td> 
                     <td className="or-table-td">{item.engineering}</td> 
@@ -245,29 +344,13 @@ liability: [], sme: [] };
             <select  
               value={selectedMatrixPeriod}  
               onChange={(e) => setSelectedMatrixPeriod(e.target.value)} 
-              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', marginRight: '10px' }} 
+              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', 
+marginRight: '10px', color: '#000', backgroundColor: '#fff' }} 
             > 
-              {selectedDate?.month === 'July' ? ( 
-                <> 
-                  <option value="YTD July 2025">YTD July 2025</option> 
-                  <option value="YTD July 2024">YTD July 2024</option> 
-                  <option value="July 2025">July 2025</option> 
-                  <option value="July 2024">July 2024</option> 
-                </> 
-              ) : selectedDate?.month === 'June' ? ( 
-                <> 
-                  <option value="YTD June 2025">YTD June 2025</option> 
-                  <option value="YTD June 2024">YTD June 2024</option> 
-                  <option value="June 2025">June 2025</option> 
-                  <option value="June 2024">June 2024</option> 
-                </> 
-              ) : ( 
-                <> 
-                  <option value="YTD May 2025">YTD May 2025</option> 
-                  <option value="YTD May 2024">YTD May 2024</option> 
-                  <option value="May 2025">May 2025</option> 
-                  <option value="May 2024">May 2024</option> 
-                </> 
+              {availablePeriods.length > 0 ? availablePeriods.map(p => ( 
+                 <option key={p} value={p}>{p}</option> 
+              )) : ( 
+                 <option>Loading...</option> 
               )} 
             </select> 
           </div> 
@@ -277,10 +360,13 @@ liability: [], sme: [] };
             <thead> 
               <tr> 
                 <th rowSpan={2} className="or-matrix-th-segment">Segment</th> 
-                {lobOrder.map(lob => <th key={lob.key} colSpan={3} className={`or-matrix-th-lob ${lob.colorClass}`}>{lob.label}</th>)} 
+                {lobOrder.filter(l => !l.key.includes('Dwellings')).map(lob => <th key={lob.key} colSpan={3} 
+className={`or-matrix-th-lob ${lob.colorClass}`}>{lob.label}</th>)} 
               </tr> 
               <tr> 
-                {lobOrder.map(lob => <><th key={lob.key+'-n'} className="or-matrix-th-sub">NOP</th><th key={lob.key+'-g'} className="or-matrix-th-sub">GWP</th><th key={lob.key+'-r'} 
+                {lobOrder.filter(l => !l.key.includes('Dwellings')).map(lob => <><th key={lob.key+'-n'} 
+className="or-matrix-th-sub">NOP</th><th key={lob.key+'-g'} 
+className="or-matrix-th-sub">GWP</th><th key={lob.key+'-r'} 
 className="or-matrix-th-sub">GIC:GEP</th></>)} 
               </tr> 
             </thead> 
@@ -288,18 +374,21 @@ className="or-matrix-th-sub">GIC:GEP</th></>)}
               {segments.length > 0 ? segments.map(segment => ( 
                 <tr key={segment}> 
                   <td className="or-matrix-td-segment">{segment}</td> 
-                  {lobOrder.map(lob => { 
-                    const cell = segMap[segment][lob.key]; 
+                  {lobOrder.filter(l => !l.key.includes('Dwellings')).map(lob => { 
+                    const cell = segMap[segment][lob.key] || segMap[segment][lob.label] || 
+segMap[segment][lob.key.split(' ')[0]];  
                     return ( 
                       <> 
                         <td className="or-matrix-td-nop">{cell ? cell.nop : '-'}</td> 
                         <td className="or-matrix-td-gwp">{cell ? cell.gwp.toLocaleString() : '-'}</td> 
-                        <td className="or-matrix-td-gicgep" style={cell ? getGicGepStyle(cell.gic_gep) : {}}>{cell ? cell.gic_gep || '0%' : '0%'}</td> 
+                        <td className="or-matrix-td-gicgep" style={cell ? getGicGepStyle(cell.gic_gep) : {}}>{cell 
+? cell.gic_gep || '0%' : '0%'}</td> 
                       </> 
                     ); 
                   })} 
                 </tr> 
-              )) : <tr><td colSpan="19" className="or-table-td" style={{textAlign:'center'}}>No Data</td></tr>} 
+              )) : <tr><td colSpan="19" className="or-table-td" style={{textAlign:'center'}}>No 
+Data</td></tr>} 
             </tbody> 
           </table> 
           <div className="or-note or-note-red" style={{ marginTop: '10px', fontSize: '11px' }} 
@@ -307,7 +396,7 @@ dangerouslySetInnerHTML={{ __html: matrixNote }}></div>
         </div> 
       </div> 
  
-      {/* Growth Section - Header linked to Global Date */} 
+      {/* Growth Section */} 
       <div className="or-growth-section"> 
         <div className="or-growth-header"> 
           LOB wise Growth % ( GWP ) - {getDefaultKey()} 
@@ -345,7 +434,7 @@ LOB Segment wise Report Last 5 Years Comparison</button>
       {/* Bottom Tables */} 
       <div className="or-tables-section"> 
         <div className="or-tables-side-by-side"> 
-          {/* Cordys TAT - Header is static/global */} 
+          {/* Cordys TAT */} 
           <div className="or-table-block"> 
             <div className="or-table-block-header">Cordys TAT Report</div> 
             <table className="or-table-block-table"> 
@@ -384,7 +473,7 @@ className="or-table-block-td">{row.beyondPct}</td>
             </table> 
           </div> 
  
-          {/* Fire UnderInsurance - Header linked to Global Date */} 
+          {/* Fire UnderInsurance */} 
           <div className="or-table-block"> 
             <div className="or-table-block-header"> 
               FIRE - Banca Channel wise UnderInsurance Report - {getDefaultKey()} 
@@ -409,7 +498,7 @@ className="or-table-block-th">Claims %</th><th className="or-table-block-th">NOC
           </div> 
         </div> 
  
-        {/* Inward Fac - Header linked to Global Date */} 
+        {/* Inward Fac */} 
         <div className="or-table-block"> 
           <div className="or-table-block-header"> 
             Inward Fac - {getDefaultKey()} 
@@ -455,11 +544,11 @@ className="or-table-block-td">{inwardYtdData[idx].gicgep}</td></>
         </div> 
       </div> 
  
-      {/* Bottom Grid - Headers linked to Global Date */} 
+      {/* Bottom Grid */} 
       <div className="or-bottom-grid" style={{ fontSize: '10px' }}> 
         <div className="or-bottom-left"> 
           <div className="or-bottom-header" style={{ padding: '0.2rem 0', fontSize: '11px' }}> 
-            {`New Business Sourced (>5 lakhs) - ${getDefaultKey()}`} 
+            New Business Sourced ({">"}5 lakhs) - {getDefaultKey()} 
           </div> 
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '10px' }}> 
             <span className="or-bottom-label" style={{ fontSize: '10px' }}>Commercial:</span> 
@@ -483,7 +572,7 @@ Initiatives - {getDefaultKey()}</div>
 dangerouslySetInnerHTML={{ __html: newInitiativesData }}></div> 
           <div className="or-bottom-header or-bottom-header-secondary" style={{ padding: '0.2rem 0', 
 fontSize: '11px', marginTop: '0.3rem' }}> 
-          {`New Business Sourced (>5 lakhs) - ${getDefaultKey()}`}
+            New Business Sourced ({">"}5 lakhs) - {getDefaultKey()} 
           </div> 
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '10px' }}> 
             <span className="or-bottom-label" style={{ fontSize: '10px' }}>SME:</span> 
@@ -509,7 +598,6 @@ textAlign: 'center' }}>
                 {selectedDate?.month === 'July' ? "Apr'25 - July'25" : selectedDate?.month === 'June' ? 
 "Apr'25 - June'25" : "Apr'25 - May'25"} 
               </h3> 
-              {/* Static Growth Table Implementation */} 
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}> 
                 <thead> 
                   <tr style={{ backgroundColor: '#f0f0f0' }}> 
@@ -547,7 +635,6 @@ val.toLocaleString() : val}</td>
                 </tbody> 
               </table> 
             </div> 
-            {/* Dynamic Popup Table */} 
             <div> 
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}> 
                 <h3 style={{ backgroundColor: '#ff6600', color: 'white', padding: '8px', margin: '0', textAlign: 
