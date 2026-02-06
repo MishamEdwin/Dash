@@ -1,8 +1,25 @@
-	• This work is for OverAllReview.jsx component's "Broker wise GWP Report" Table.
-	• It should fetch the data from this file "src/data/BROKER_WISE_REPORT.json" file.
-	• The data from the src/data/BROKER_WISE_REPORT.json file should be sorted in descending order based on the Grand Total.
-	• Then the Top 11 Fields should be displayed like in the image. The number values should be divided by 1000000 and the displayed data should have only single decimal value.
-	• The remaining field values should be grouped and Displayed in the Others field.
-	• Finally The Total GWP Row should display the SUM of all these values accordingly.
-	• The Table header should display the Financial Yr data based on the "Time" data from the src/data/BROKER_WISE_REPORT.json file.
-Look at this image for reference:
+	• This work is for the "Upload.jsx" component's "LOB & Segment wise Report" button.
+	• The uploaded Excel file should be processed and saved as as json file in "src/data/LOB_AND_SEGMENT_WISE_DATA_02.json" .
+	• If the uploaded file is in this format:
+		LOB	UW Sub Channel	Comm/Hlth SubProduct Name	Time	Prem	Earned Prem	Net Pol	Claim incurred in period
+		LIABILITY	Banca PSU	(None)	December, 2025/26	39,264 	384,355 	5 	 
+		LIABILITY	Banca PSU	(None)	December, 2024/25	(21,751)	582,573 	3 	504,500 
+		LIABILITY	Banca PSU	(None)	April, 2025-26 - December, 2025-26	3,879,178 	2,933,151 	68 	123,525 
+		LIABILITY	Banca PSU	(None)	April, 2024-25 - December, 2024-25	1,147,888 	12,412,198 	41 	781,500 
+		LIABILITY	Commercial	(None)	December, 2025/26	973,184 	1,571,891 	50 	2,579,163 
+		
+		Then it should processed and stored in this format:
+		
+		       "Time":"December, 2025/26"{ 
+		                  "UW Sub Channel": "Banca PSU"{ 
+		                          "LOB" : "Liability"{ 
+		                                     " Total NOP" : // SUM all the Net Pol values,
+		                                     "Total Prem": // SUM all the Prem values,
+		                                     "Total Earned Prem": // SUM all the Earned Prem values,
+		                                    "Total Claim incurred in Period" : // SUM all the Claim incurred in Period 
+		                             } 
+		                    }
+		       }
+
+please dont add, change or remove any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code readu to paste
+		            
