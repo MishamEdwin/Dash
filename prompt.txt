@@ -1,25 +1,6 @@
-	• This work is for the "Upload.jsx" component's "LOB & Segment wise Report" button.
-	• The uploaded Excel file should be processed and saved as as json file in "src/data/LOB_AND_SEGMENT_WISE_DATA_02.json" .
-	• If the uploaded file is in this format:
-		LOB	UW Sub Channel	Comm/Hlth SubProduct Name	Time	Prem	Earned Prem	Net Pol	Claim incurred in period
-		LIABILITY	Banca PSU	(None)	December, 2025/26	39,264 	384,355 	5 	 
-		LIABILITY	Banca PSU	(None)	December, 2024/25	(21,751)	582,573 	3 	504,500 
-		LIABILITY	Banca PSU	(None)	April, 2025-26 - December, 2025-26	3,879,178 	2,933,151 	68 	123,525 
-		LIABILITY	Banca PSU	(None)	April, 2024-25 - December, 2024-25	1,147,888 	12,412,198 	41 	781,500 
-		LIABILITY	Commercial	(None)	December, 2025/26	973,184 	1,571,891 	50 	2,579,163 
-		
-		Then it should processed and stored in this format:
-		
-		       "Time":"December, 2025/26"{ 
-		                  "UW Sub Channel": "Banca PSU"{ 
-		                          "LOB" : "Liability"{ 
-		                                     " Total NOP" : // SUM all the Net Pol values,
-		                                     "Total Prem": // SUM all the Prem values,
-		                                     "Total Earned Prem": // SUM all the Earned Prem values,
-		                                    "Total Claim incurred in Period" : // SUM all the Claim incurred in Period 
-		                             } 
-		                    }
-		       }
-
-please dont add, change or remove any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste
-		            
+	• This work is for OverAllReview.jsx component's LOB & Segment wise Report Table part.
+	• It should fetch the data from this file "src/data/LOB_AND_SEGMENT_WISE_DATA_02.json" and display the data according to the "Time" which is selected from the dropdown option of the table.
+	• Refer the image for how the data should be displayed.
+	• For the "NOP" use the "Total NOP", For the "GWP" use the "Total Prem" value divided by "1000000" without any decimal values, For the "GIC:GEP" use the "(Total Claim incurred in Period/Total Earned Prem) * 100" value with "%" symbol at the end. If the GIC:GEP value exceeds "90%" then display the value in Red color except for the OVERALL column.
+	• At the bottom part of the table below the "TOTAL" display this content as shown in the image as footer "*Fire - Commercial : KAMCO CHEW FOOD PRIVATE LTD - 29.31 Crs (Short Circuit Fire) ;  Engg -  Commercial : BAGMANE DEVELOPERS PRIVATE LTD = 14.88 Crs (Short Circuit Fire) ; Others :  MITSUI AND CO LIMITED = 85.24 L (Storm, Cyclone, Typhoon, Tempest, Hurricane, Tornado) ; Marine - Commercial - D LINK INDIA LTD = 2.42 Crs(General Average/ Jettison) ,  SME : LANEXIS PRIVATE LIMITED-  73.53 L (General Average (GA)); Others - TUBE INVESTMENTS OF INDIA LIMITED- CYCLE DIVISION = 18.83 Lakhs (Wet Damage)".
+	• Please don’t add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
