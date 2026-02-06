@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { X, Download, Upload as UploadIcon, FileText, CheckCircle, AlertCircle } from 
 'lucide-react'; 
 import * as XLSX from 'xlsx'; 
+ 
 const Upload = () => { 
-const [selectedDate, setSelectedDate] = useState({ month: 'January', year: '2025-26' }); 
-const [activeTab, setActiveTab] = useState('OverAllReview'); 
-const [activeModal, setActiveModal] = useState(null); 
-// State for specific files in LOB Report 
-const [lobFile, setLobFile] = useState(null); 
-const [dwellingsFile, setDwellingsFile] = useState(null); 
-const [processing, setProcessing] = useState(false); 
-// Data mapping 
+  const [selectedDate, setSelectedDate] = useState({ month: 'January', year: '2025-26' }); 
+  const [activeTab, setActiveTab] = useState('OverAllReview'); 
+  const [activeModal, setActiveModal] = useState(null); 
+ 
+  // State for specific files 
+  const [lobFile, setLobFile] = useState(null); 
+  const [dwellingsFile, setDwellingsFile] = useState(null); 
+  const [brokerFile, setBrokerFile] = useState(null); 
+  const [processing, setProcessing] = useState(false); 
+ 
+  // Data mapping 
   const sectionData = { 
     OverAllReview: [ 
       'LOB wise NOP GWP GIC:GEP', 'Broker wise GWP Report', 'LOB & Segment wise Report', 
@@ -28,7 +32,8 @@ const [processing, setProcessing] = useState(false);
     ], 
     Engineering: [ 
       'Portfolio - GWP Mix', 'CPM - Segment & Channel wise Premium contribution', 'IBL _ CPM - Top 15 Risk location wise Premium & Claims Report', 
-      'MBD & EEI - Segment wise Report', 'IBL - CPM Equipment wise Report', 'EAR - Project wise Report', 'CAR - Project wise Report' 
+      'MBD & EEI - Segment wise Report', 'IBL - CPM Equipment wise Report', 'EAR - Project wise Report', 
+'CAR - Project wise Report' 
     ], 
     Marine: [ 
       'Segment wise GWP Mix', 'Segment wise Average Premium & Rate', 'Segment wise Renewal Ratio', 
@@ -48,94 +53,118 @@ const [processing, setProcessing] = useState(false);
     link.click(); 
   }; 
  
-  // --- Helper: Parse Excel Numbers (Handles commas, parenthesis for negative, blanks) --- 
+  // --- Helper: Parse Excel Numbers --- 
   const parseExcelNumber = (val) => { 
     if (val === undefined || val === null || val === '') return 0; 
     if (typeof val === 'number') return val; 
      
     let str = val.toString().trim(); 
-    if (str === '-') return 0; // Handle accounting dash 
+    if (str === '-') return 0; 
  
-    // Check for parenthesis negative notation (e.g., "(21,751)") 
     let isNegative = false; 
     if (str.startsWith('(') && str.endsWith(')')) { 
       isNegative = true; 
       str = str.replace(/[()]/g, ''); 
     } 
  
-    // Remove commas 
     str = str.replace(/,/g, ''); 
- 
     const parsed = parseFloat(str); 
     return isNaN(parsed) ? 0 : (isNegative ? -parsed : parsed); 
   }; 
  
-  // --- Logic: Process LOB & Segment File --- 
-  const processLobFile = (data) => { 
-    // Structure: Group by Time -> then by LOB 
+  // --- Helper: Title Case for LOBs --- 
+  const toTitleCase = (str) => { 
+    if (!str) return ''; 
+    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()); 
+  }; 
+ 
+  // --- Logic: Process Broker File (Nested Grouping) --- 
+  const processBrokerFile = (data) => { 
+    // Root structure: { "TimeValue": { "BrokerValue": { "SubChannelValue": { LOBs... } } } } 
     const grouped = {}; 
  
     data.forEach(row => { 
-      // Key mapping based on your excel headers 
+      // Extract keys from columns 
       const time = row['Time']; 
-      const lob = row['LOB']; 
-       
-      if (!time || !lob) return; 
+      const rawBroker = row['Broker Name']; 
+      const rawSubChannel = row['UW Sub Channel']; 
+      const rawLOB = row['LOB']; 
+      const rawPrem = row['Prem']; 
  
+      // Basic Validation 
+      if (!time || !rawBroker || !rawLOB) return; 
+ 
+      const brokerName = rawBroker.trim(); 
+      // Handle sub channel (default to 'Unknown' if missing, though excel usually has (None)) 
+      const subChannel = rawSubChannel ? rawSubChannel.trim() : '(None)'; 
+      const lob = toTitleCase(rawLOB.trim()); 
+      const prem = parseExcelNumber(rawPrem); 
+ 
+      // 1. Level: Time 
       if (!grouped[time]) { 
         grouped[time] = {}; 
       } 
-      if (!grouped[time][lob]) { 
-        grouped[time][lob] = { 
-          "Total Prem": 0, 
-          "Total Earned Prem": 0, 
-          "Total Net Pol": 0, 
-          "Total Claim incurred in period": 0 
+ 
+      // 2. Level: Broker Name 
+      if (!grouped[time][brokerName]) { 
+        grouped[time][brokerName] = {}; 
+      } 
+ 
+      // 3. Level: UW Sub Channel 
+      if (!grouped[time][brokerName][subChannel]) { 
+        grouped[time][brokerName][subChannel] = { 
+          "Grand Total": 0 
         }; 
       } 
  
+      // 4. Level: LOB Data 
+      if (!grouped[time][brokerName][subChannel][lob]) { 
+        grouped[time][brokerName][subChannel][lob] = 0; 
+      } 
+ 
+      // Aggregate Values 
+      grouped[time][brokerName][subChannel][lob] += prem; 
+      grouped[time][brokerName][subChannel]["Grand Total"] += prem; 
+    }); 
+ 
+    // Return the nested object structure directly 
+    return grouped; 
+  }; 
+ 
+  // --- Logic: Process LOB & Segment File --- 
+  const processLobFile = (data) => { 
+    const grouped = {}; 
+    data.forEach(row => { 
+      const time = row['Time']; 
+      const lob = row['LOB']; 
+      if (!time || !lob) return; 
+      if (!grouped[time]) grouped[time] = {}; 
+      if (!grouped[time][lob]) { 
+        grouped[time][lob] = { "Total Prem": 0, "Total Earned Prem": 0, "Total Net Pol": 0, "Total Claim incurred in period": 0 }; 
+      } 
       grouped[time][lob]["Total Prem"] += parseExcelNumber(row['Prem']); 
       grouped[time][lob]["Total Earned Prem"] += parseExcelNumber(row['Earned Prem']); 
       grouped[time][lob]["Total Net Pol"] += parseExcelNumber(row['Net Pol']); 
       grouped[time][lob]["Total Claim incurred in period"] += parseExcelNumber(row['Claim incurred in period']); 
     }); 
- 
-    // Convert to final array format 
-    return Object.keys(grouped).map(timeKey => ({ 
-      "Time": timeKey, 
-      "LOB": grouped[timeKey] 
-    })); 
+    return Object.keys(grouped).map(timeKey => ({ "Time": timeKey, "LOB": grouped[timeKey] })); 
   }; 
  
   // --- Logic: Process Dwellings File --- 
   const processDwellingsFile = (data) => { 
-    // Structure: Group by Time only 
     const grouped = {}; 
- 
     data.forEach(row => { 
       const time = row['Time']; 
       if (!time) return; 
- 
       if (!grouped[time]) { 
-        grouped[time] = { 
-          "Total Prem": 0, 
-          "Total Earned Prem": 0, 
-          "Total Net Pol": 0, 
-          "Total Claim incurred in period": 0 
-        }; 
+        grouped[time] = { "Total Prem": 0, "Total Earned Prem": 0, "Total Net Pol": 0, "Total Claim incurred in period": 0 }; 
       } 
- 
       grouped[time]["Total Prem"] += parseExcelNumber(row['Prem']); 
       grouped[time]["Total Earned Prem"] += parseExcelNumber(row['Earned Prem']); 
       grouped[time]["Total Net Pol"] += parseExcelNumber(row['Net Pol']); 
       grouped[time]["Total Claim incurred in period"] += parseExcelNumber(row['Claim incurred in period']); 
     }); 
- 
-    // Convert to final array format 
-    return Object.keys(grouped).map(timeKey => ({ 
-      "Time": timeKey, 
-      ...grouped[timeKey] 
-    })); 
+    return Object.keys(grouped).map(timeKey => ({ "Time": timeKey, ...grouped[timeKey] })); 
   }; 
  
   // --- Trigger Download of JSON --- 
@@ -180,12 +209,25 @@ const [processing, setProcessing] = useState(false);
       reader.readAsBinaryString(dwellingsFile); 
     } 
  
-    // Small timeout to simulate processing visualization 
+    // 3. Process Broker Report File 
+    if (brokerFile) { 
+      const reader = new FileReader(); 
+      reader.onload = (e) => { 
+        const wb = XLSX.read(e.target.result, { type: 'binary' }); 
+        const sheetName = wb.SheetNames[0]; 
+        const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]); 
+        const processedData = processBrokerFile(json); 
+        downloadJson(processedData, "BROKER_WISE_REPORT.json"); 
+      }; 
+      reader.readAsBinaryString(brokerFile); 
+    } 
+ 
     setTimeout(() => { 
       setProcessing(false); 
       setActiveModal(null); 
       setLobFile(null); 
       setDwellingsFile(null); 
+      setBrokerFile(null); 
       alert("Files processed! JSON files have been downloaded. Please move them to 'src/data'."); 
     }, 1000); 
   }; 
@@ -195,6 +237,7 @@ const [processing, setProcessing] = useState(false);
     setActiveModal(null); 
     setLobFile(null); 
     setDwellingsFile(null); 
+    setBrokerFile(null); 
   }; 
  
   return ( 
@@ -290,7 +333,7 @@ fade-in zoom-in duration-200">
             </div> 
              
             <div className="p-6"> 
-              {/* Special Layout for LOB wise NOP GWP GIC:GEP */} 
+              {/* Layout for LOB wise NOP GWP GIC:GEP */} 
               {activeModal === 'LOB wise NOP GWP GIC:GEP' ? ( 
                 <div className="space-y-4"> 
                   <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3"> 
@@ -358,10 +401,66 @@ hover:bg-gray-50 font-medium transition-colors"
                     </button> 
                     <button  
                       onClick={handleUploadAndProcess} 
-                      disabled={!lobFile && !dwellingsFile || processing} 
+                      disabled={(!lobFile && !dwellingsFile) || processing} 
                       className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
 transition-colors ${ 
                         (!lobFile && !dwellingsFile) || processing  
+                        ? 'bg-gray-400 cursor-not-allowed'  
+                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
+                      }`} 
+                    > 
+                      {processing ? 'Processing...' : 'Process & Download JSON'} 
+                    </button> 
+                  </div> 
+                </div> 
+              ) : activeModal === 'Broker wise GWP Report' ? ( 
+                /* Layout for Broker wise GWP Report */ 
+                <div className="space-y-4"> 
+                  <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3"> 
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" /> 
+                    <p className="text-xs text-blue-800"> 
+                      Upload the Broker GWP Excel file. The system will aggregate premiums by LOB, Grouped 
+by Time and Broker, and generate a Grand Total. 
+                    </p> 
+                  </div> 
+ 
+                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 
+transition-colors"> 
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Broker Wise Data 
+File</label> 
+                    <div className="flex items-center gap-3"> 
+                       <label className="flex-1 cursor-pointer"> 
+                          <div className="flex items-center justify-center w-full px-4 py-2 bg-white border 
+border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
+                            {brokerFile ? ( 
+                              <span className="flex items-center text-green-600 gap-2"><CheckCircle 
+className="w-4 h-4"/> Selected</span> 
+                            ) : ( 
+                              <span>Choose Excel File</span> 
+                            )} 
+                          </div> 
+                          <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => 
+setBrokerFile(e.target.files[0])} /> 
+                       </label> 
+                       {brokerFile && <span className="text-xs text-gray-500 truncate 
+max-w-[100px]">{brokerFile.name}</span>} 
+                    </div> 
+                  </div> 
+ 
+                  <div className="mt-6 flex gap-3"> 
+                    <button  
+                      onClick={closeModal} 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
+                    > 
+                      Cancel 
+                    </button> 
+                    <button  
+                      onClick={handleUploadAndProcess} 
+                      disabled={!brokerFile || processing} 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
+                        !brokerFile || processing  
                         ? 'bg-gray-400 cursor-not-allowed'  
                         : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
                       }`} 
@@ -391,11 +490,9 @@ border-dashed rounded-xl hover:border-blue-400 transition-colors bg-gray-50">
                       <div className="space-y-1 text-center"> 
                         <UploadIcon className="mx-auto h-10 w-10 text-gray-400" /> 
                         <div className="flex text-sm text-gray-600"> 
-                          <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent 
-rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"> 
+                          <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"> 
                             <span>Browse files</span> 
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" 
-accept=".xlsx, .xls" /> 
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".xlsx, .xls" /> 
                           </label> 
                         </div> 
                         <p className="text-xs text-gray-500">Excel files only (max. 10MB)</p> 
@@ -406,16 +503,14 @@ accept=".xlsx, .xls" />
                   <div className="mt-8 flex gap-3"> 
                     <button  
                       onClick={closeModal} 
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
-hover:bg-gray-50 font-medium transition-colors" 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors" 
                     > 
-Cancel 
-</button> 
-<button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg 
-hover:bg-blue-700 font-medium shadow-md shadow-blue-200 transition-colors"> 
-Upload File 
-</button> 
-</div> 
+                      Cancel 
+                    </button> 
+                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md shadow-blue-200 transition-colors"> 
+                      Upload File 
+                    </button> 
+                  </div> 
 </> 
 )} 
 </div> 
