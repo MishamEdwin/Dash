@@ -19,6 +19,7 @@ const OverAllReview = ({ selectedDate }) => {
   // --- State Management --- 
   const [lobRawData, setLobRawData] = useState([]); 
   const [dwellingsRawData, setDwellingsRawData] = useState([]); 
+  const [brokerRawData, setBrokerRawData] = useState({}); // New state for Broker JSON 
   const [allData, setAllData] = useState({});  
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
@@ -27,6 +28,11 @@ const OverAllReview = ({ selectedDate }) => {
   const [availablePeriods, setAvailablePeriods] = useState([]); 
   const [selectedLobPeriod, setSelectedLobPeriod] = useState(''); 
   const [chartData, setChartData] = useState([]); 
+ 
+  // Broker Table Data 
+  const [processedBrokerData, setProcessedBrokerData] = useState([]); 
+  const [brokerTotalRow, setBrokerTotalRow] = useState(null); 
+  const [brokerHeaderTime, setBrokerHeaderTime] = useState(''); 
  
   // Existing states for other sections 
   const [selectedMatrixPeriod, setSelectedMatrixPeriod] = useState(''); 
@@ -50,10 +56,12 @@ const OverAllReview = ({ selectedDate }) => {
  
         const lobJson = getFile('LOB_AND_SEGMENT_WISE_DATA') || []; 
         const dwellingsJson = getFile('Dwellings') || []; 
+        const brokerJson = getFile('BROKER_WISE_REPORT') || {}; // Load Broker Data 
         const overallJson = getFile('overall_review_data') || {}; 
  
         setLobRawData(lobJson); 
         setDwellingsRawData(dwellingsJson); 
+        setBrokerRawData(brokerJson); 
         setAllData(overallJson); 
  
         // Initialize Dropdowns 
@@ -184,21 +192,132 @@ selectedLobPeriod) || {};
  
   }, [selectedLobPeriod, lobRawData, dwellingsRawData]); 
  
+  // --- Broker Table Processing Logic --- 
+  useEffect(() => { 
+    // 1. Get correct Time Key from Broker Data (Try to match selectedLobPeriod or fallback) 
+    // Structure: { "Time": { "Broker": { ... } } } 
+    let timeKey = Object.keys(brokerRawData).find(t => t === selectedLobPeriod); 
+    if (!timeKey && Object.keys(brokerRawData).length > 0) { 
+       // Fallback: Try matching just the month or pick first available 
+       const month = selectedDate?.month; 
+       timeKey = Object.keys(brokerRawData).find(t => t.includes(month)) || 
+Object.keys(brokerRawData)[0]; 
+    } 
+ 
+    if (!timeKey || !brokerRawData[timeKey]) { 
+      setProcessedBrokerData([]); 
+      setBrokerHeaderTime(''); 
+      return; 
+    } 
+ 
+    setBrokerHeaderTime(timeKey); 
+    const dataForTime = brokerRawData[timeKey]; // Object of Brokers 
+ 
+    // 2. Flatten and Calculate Totals for Sorting 
+    const flattenedBrokers = Object.entries(dataForTime).map(([brokerName, brokerContent]) => { 
+      // Aggregate data across Sub Channels if multiple exist per broker 
+      let fire = 0, engg = 0, marine = 0, misc = 0, liability = 0, grandTotal = 0; 
+      let channelName = ''; // To display (takes the last one found if multiple) 
+ 
+      Object.entries(brokerContent).forEach(([subChannel, lobData]) => { 
+         channelName = subChannel;  
+         fire += lobData['Fire'] || 0; 
+         engg += lobData['Engineering'] || 0; 
+         marine += lobData['Marine'] || 0; 
+         misc += lobData['Miscellaneous'] || 0; 
+         liability += lobData['Liability'] || 0; 
+         grandTotal += lobData['Grand Total'] || 0; 
+      }); 
+ 
+      return { 
+        brokerName, 
+        channel: channelName, 
+        fire, 
+        engg, 
+        marine, 
+        misc, 
+        liability, 
+        grandTotal 
+      }; 
+    }); 
+ 
+    // 3. Sort by Grand Total Descending 
+    flattenedBrokers.sort((a, b) => b.grandTotal - a.grandTotal); 
+ 
+    // 4. Top 11 & Others 
+    const top11 = flattenedBrokers.slice(0, 11); 
+    const others = flattenedBrokers.slice(11); 
+ 
+    // Aggregate Others 
+    const othersRow = { 
+      brokerName: 'Others', 
+      channel: '', 
+      fire: 0, engg: 0, marine: 0, misc: 0, liability: 0, grandTotal: 0 
+    }; 
+ 
+    others.forEach(item => { 
+      othersRow.fire += item.fire; 
+      othersRow.engg += item.engg; 
+      othersRow.marine += item.marine; 
+      othersRow.misc += item.misc; 
+      othersRow.liability += item.liability; 
+      othersRow.grandTotal += item.grandTotal; 
+    }); 
+ 
+    const finalRows = [...top11]; 
+    if (others.length > 0) { 
+      finalRows.push(othersRow); 
+    } 
+ 
+    // 5. Calculate Grand Total Row (Sum of Final Rows) 
+    const totalRow = { 
+      fire: 0, engg: 0, marine: 0, misc: 0, liability: 0 
+    }; 
+    finalRows.forEach(r => { 
+      totalRow.fire += r.fire; 
+      totalRow.engg += r.engg; 
+      totalRow.marine += r.marine; 
+      totalRow.misc += r.misc; 
+      totalRow.liability += r.liability; 
+    }); 
+ 
+    // 6. Format Function (Divide by 1M, 1 Decimal) 
+    const fmt = (val) => (val / 1000000).toFixed(1); 
+ 
+    // Apply formatting to display data 
+    const formattedRows = finalRows.map(r => ({ 
+      ...r, 
+      fire: fmt(r.fire), 
+      engg: fmt(r.engg), 
+      marine: fmt(r.marine), 
+      misc: fmt(r.misc), 
+      liability: fmt(r.liability) 
+    })); 
+ 
+    const formattedTotal = { 
+      fire: fmt(totalRow.fire), 
+      engg: fmt(totalRow.engg), 
+      marine: fmt(totalRow.marine), 
+      misc: fmt(totalRow.misc), 
+      liability: fmt(totalRow.liability) 
+    }; 
+ 
+    setProcessedBrokerData(formattedRows); 
+    setBrokerTotalRow(formattedTotal); 
+ 
+  }, [brokerRawData, selectedLobPeriod, selectedDate]); 
+ 
+ 
   // --- Helpers --- 
   const getDefaultKey = () => selectedDate?.month === 'July' ? 'YTD July 2025' : 
 selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
   const getMonthName = () => selectedDate?.month || 'May'; 
-  const getBrokerPeriod = (p) => (p && p.includes('July')) ? 'YTD July 2025' : (p && 
-p.includes('June')) ? 'YTD June 2025' : 'YTD May 2025'; 
   const getGicGepStyle = (val) => { 
     const num = parseInt(val?.toString().replace('%', '') || 0); 
     return num >= 90 ? { color: 'red' } : {}; 
   }; 
  
-  // --- Derived Data for Tables --- 
-  const brokerPeriod = getBrokerPeriod(selectedLobPeriod); 
-  const brokerData = allData?.brokerDataMap?.[brokerPeriod] || []; 
- 
+  // --- Derived Data for OTHER Tables --- 
   const segmentLobMatrix = allData?.segmentMatrixDataMap?.[selectedMatrixPeriod] || []; 
   const segments = Array.from(new Set(segmentLobMatrix.map(r => r.uw_seg_map))); 
   const segMap = {}; 
@@ -249,9 +368,9 @@ liability: [], sme: [] };
                   border: '1px solid #ccc',  
                   fontSize: '14px',  
                   marginRight: '10px', 
-                  color: '#000',           // Set font color to black 
-                  backgroundColor: '#fff',  // Ensure background is white 
-                  fontWeight: '500' 
+                  color: '#000',            
+                  backgroundColor: '#fff',  
+                  fontWeight: '500'  
                 }} 
               > 
                 {availablePeriods.length > 0 ? availablePeriods.map((period, index) => ( 
@@ -298,7 +417,7 @@ Circuit Fire)
         <div className="or-broker-table-container"> 
           <div className="or-table-header"> 
             <h2 className="or-table-title"> 
-              Broker wise GWP Report - {brokerPeriod} (Amt in Mn) 
+              Broker wise GWP Report - {brokerHeaderTime} ( Amt in Mn ) 
             </h2> 
           </div> 
           <div className="or-table-scroll"> 
@@ -315,19 +434,39 @@ Circuit Fire)
                 </tr> 
               </thead> 
               <tbody className="or-table-tbody"> 
-                {brokerData.length > 0 ? brokerData.map((item, index) => ( 
-                  <tr key={index} className={`or-table-tr ${item.broker_name === 'Total GWP' ? 
-'or-table-tr-total' : ''} ${item.broker_name === 'Others' ? 'or-table-tr-others' : ''}`}> 
-                    <td className="or-table-td or-table-td-broker"><div className="or-table-broker-name" 
-title={item.broker_name}>{item.broker_name}</div></td> 
-                    <td className="or-table-td">{item.uw_channel}</td> 
-                    <td className="or-table-td">{item.fire}</td> 
-                    <td className="or-table-td">{item.engineering}</td> 
-                    <td className="or-table-td">{item.marine}</td> 
-                    <td className="or-table-td">{item.misc}</td> 
-                    <td className="or-table-td">{item.liability}</td> 
-                  </tr> 
-                )) : <tr><td colSpan="7" className="or-table-td">No data available</td></tr>} 
+                {processedBrokerData.length > 0 ? ( 
+                  <> 
+                    {processedBrokerData.map((item, index) => ( 
+                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 
+'or-table-tr-others' : ''}`}> 
+                        <td className="or-table-td or-table-td-broker"> 
+                          <div className="or-table-broker-name" 
+title={item.brokerName}>{item.brokerName}</div> 
+                        </td> 
+                        <td className="or-table-td">{item.channel}</td> 
+                        <td className="or-table-td">{item.fire}</td> 
+                        <td className="or-table-td">{item.engg}</td> 
+                        <td className="or-table-td">{item.marine}</td> 
+                        <td className="or-table-td">{item.misc}</td> 
+                        <td className="or-table-td">{item.liability}</td> 
+                      </tr> 
+                    ))} 
+                    {/* Total GWP Row */} 
+                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', 
+fontWeight: 'bold' }}> 
+                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total 
+GWP</td> 
+                      <td className="or-table-td"></td> 
+                      <td className="or-table-td">{brokerTotalRow?.fire}</td> 
+                      <td className="or-table-td">{brokerTotalRow?.engg}</td> 
+                      <td className="or-table-td">{brokerTotalRow?.marine}</td> 
+                      <td className="or-table-td">{brokerTotalRow?.misc}</td> 
+                      <td className="or-table-td">{brokerTotalRow?.liability}</td> 
+                    </tr> 
+                  </> 
+                ) : ( 
+                  <tr><td colSpan="7" className="or-table-td">No data available</td></tr> 
+                )} 
               </tbody> 
             </table> 
           </div> 
