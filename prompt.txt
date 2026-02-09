@@ -1,3 +1,3 @@
-	• The values are not positioned properly. It's overflowing out of the donut.
-	• Also I want the colored labels to be displayed below with each shade's YTD year data as shown in the image.
-I'm also sharing you my OverAllReview.css code. So make changes accordingly and give me the complete working code ready to paste
+	• I don't want the chart to be split in 50/50. It should be dynamic.
+	• The values are still going outside the diameter or touching the edges. I want it to be positioned properly.
+	• The below color labels are displayed unevenly. I want it to be displayed evenly under each charts according to its color.
