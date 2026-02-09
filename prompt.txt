@@ -1,9 +1,3 @@
-	• This work is for OverAllReview.jsx component's LOB wise Growth%(GWP)part.
-	• I want you to get the data from "src/data/LOB_AND_SEGMENT_WISE_DATA.json".
-	• Just use the data which has the time periods. of YTD April - December eg,"April, 2025-26 - December, 2025-26"
-	• Add a dropdown to the Table header that I can select the desired Time period from it.
-	• On the "Right Side" of the Donut chart, the Grand total of the selected YTD year's Total Premium (GWP) should be displayed according to the LOB, 
-On the "Left Side" of the Donut chart, the Grand total of the previous YTD year from the selected YTD year's Total Premium (GWP) should be displayed according to the LOB.
-	In the "Middle" of the Donut chart, I want you to display this value" ((selected YTD year's GWP - previous YTD year's GWP)/ previous YTD year's GWP) * 100 " with rounded off and % symbol.
-	• Take a look at the image for your reference
-	• Please don't add, remove or change any part of the code unnecessarily. Implement the change's I've asked and give me the complete code ready to paste.
+	• The values are not positioned properly. It's overflowing out of the donut.
+	• Also I want the colored labels to be displayed below with each shade's YTD year data as shown in the image.
+I'm also sharing you my OverAllReview.css code. So make changes accordingly and give me the complete working code ready to paste
