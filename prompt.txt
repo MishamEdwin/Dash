@@ -1,3 +1,3 @@
 	• I don't want the chart to be split in 50/50. It should be dynamic.
 	• The values are still going outside the diameter or touching the edges. I want it to be positioned properly.
-	• The below color labels are displayed unevenly. I want it to be displayed evenly under each charts according to its color.
+	• The below color labels are displayed unevenly. I want it to be displayed evenly under each donut according to its color.
