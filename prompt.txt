@@ -1,6 +1,9 @@
-	• This work is for OverAllReview.jsx component's LOB & Segment wise Report Table part.
-	• It should fetch the data from this file "src/data/LOB_AND_SEGMENT_WISE_DATA_02.json" and display the data according to the "Time" which is selected from the dropdown option of the table.
-	• Refer the image for how the data should be displayed.
-	• For the "NOP" use the "Total NOP", For the "GWP" use the "Total Prem" value divided by "1000000" without any decimal values, For the "GIC:GEP" use the "(Total Claim incurred in Period/Total Earned Prem) * 100" value with "%" symbol at the end. If the GIC:GEP value exceeds "90%" then display the value in Red color except for the OVERALL column.
-	• At the bottom part of the table below the "TOTAL" display this content as shown in the image as footer "*Fire - Commercial : KAMCO CHEW FOOD PRIVATE LTD - 29.31 Crs (Short Circuit Fire) ;  Engg -  Commercial : BAGMANE DEVELOPERS PRIVATE LTD = 14.88 Crs (Short Circuit Fire) ; Others :  MITSUI AND CO LIMITED = 85.24 L (Storm, Cyclone, Typhoon, Tempest, Hurricane, Tornado) ; Marine - Commercial - D LINK INDIA LTD = 2.42 Crs(General Average/ Jettison) ,  SME : LANEXIS PRIVATE LIMITED-  73.53 L (General Average (GA)); Others - TUBE INVESTMENTS OF INDIA LIMITED- CYCLE DIVISION = 18.83 Lakhs (Wet Damage)".
-	• Please don’t add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
+	• This work is for OverAllReview.jsx component's LOB wise Growth%(GWP)part.
+	• I want you to get the data from "src/data/LOB_AND_SEGMENT_WISE_DATA.json".
+	• Just use the data which has the time periods. of YTD April - December eg,"April, 2025-26 - December, 2025-26"
+	• Add a dropdown to the Table header that I can select the desired Time period from it.
+	• On the "Right Side" of the Donut chart, the Grand total of the selected YTD year's Total Premium (GWP) should be displayed according to the LOB, 
+On the "Left Side" of the Donut chart, the Grand total of the previous YTD year from the selected YTD year's Total Premium (GWP) should be displayed according to the LOB.
+	In the "Middle" of the Donut chart, I want you to display this value" ((selected YTD year's GWP - previous YTD year's GWP)/ previous YTD year's GWP) * 100 " with rounded off and % symbol.
+	• Take a look at the image for your reference
+	• Please don't add, remove or change any part of the code unnecessarily. Implement the change's I've asked and give me the complete code ready to paste.
