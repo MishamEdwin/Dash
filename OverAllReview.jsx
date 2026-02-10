@@ -1,64 +1,89 @@
+ 
 import { useState, useEffect, Fragment } from 'react'; 
 import { 
-Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-LineChart, Line, ComposedChart, PieChart, Pie, Cell 
+  Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  LineChart, Line, ComposedChart, PieChart, Pie, Cell 
 } from 'recharts'; 
 import '../styles/OverAllReview.css'; 
-// Static configuration for Chart LOB columns 
+ 
+// Static configuration for Chart LOB columns  
 const chartLobOrder = [ 
-{ key: 'FIRE (Dwellings)', label: 'FIRE (Dwellings)', colorClass: 'lob-fire' }, 
-{ key: 'FIRE (Non-Dwellings)', label: 'FIRE (Non-Dwellings)', colorClass: 'lob-fire' }, 
-{ key: 'ENGINEERING', label: 'ENGINEERING', colorClass: 'lob-engineering' }, 
-{ key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colorClass: 'lob-miscellaneous' }, 
-{ key: 'MARINE', label: 'MARINE', colorClass: 'lob-marine' }, 
-{ key: 'LIABILITY', label: 'LIABILITY', colorClass: 'lob-liability' }, 
-{ key: 'OVERALL', label: 'OVERALL', colorClass: 'lob-overall' } 
+  { key: 'FIRE (Dwellings)', label: 'FIRE (Dwellings)', colorClass: 'lob-fire' }, 
+  { key: 'FIRE (Non-Dwellings)', label: 'FIRE (Non-Dwellings)', colorClass: 'lob-fire' }, 
+  { key: 'ENGINEERING', label: 'ENGINEERING', colorClass: 'lob-engineering' }, 
+  { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colorClass: 'lob-miscellaneous' }, 
+  { key: 'MARINE', label: 'MARINE', colorClass: 'lob-marine' }, 
+  { key: 'LIABILITY', label: 'LIABILITY', colorClass: 'lob-liability' }, 
+  { key: 'OVERALL', label: 'OVERALL', colorClass: 'lob-overall' } 
 ]; 
+ 
 const OverAllReview = ({ selectedDate }) => { 
-// --- State Management --- 
-const [lobRawData, setLobRawData] = useState([]); 
-const [dwellingsRawData, setDwellingsRawData] = useState([]); 
-const [brokerRawData, setBrokerRawData] = useState({}); 
+  // --- State Management ---  
+  const [lobRawData, setLobRawData] = useState([]); 
+  const [dwellingsRawData, setDwellingsRawData] = useState([]); 
+  const [brokerRawData, setBrokerRawData] = useState({}); 
   const [lobSegmentRawData, setLobSegmentRawData] = useState({}); 
-  const [allData, setAllData] = useState({});  
+  const [allData, setAllData] = useState({}); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
  
-  // Chart Data 
+  // Chart Data  
   const [availablePeriods, setAvailablePeriods] = useState([]); 
   const [selectedLobPeriod, setSelectedLobPeriod] = useState(''); 
   const [chartData, setChartData] = useState([]); 
  
-  // Broker Table Data 
+  // Broker Table Data  
   const [processedBrokerData, setProcessedBrokerData] = useState([]); 
   const [brokerTotalRow, setBrokerTotalRow] = useState(null); 
   const [brokerHeaderTime, setBrokerHeaderTime] = useState(''); 
  
-  // LOB & Segment Table Data 
+  // LOB & Segment Table Data  
   const [selectedMatrixPeriod, setSelectedMatrixPeriod] = useState(''); 
-  const [matrixPeriods, setMatrixPeriods] = useState([]);  
+  const [matrixPeriods, setMatrixPeriods] = useState([]); 
   const [processedMatrixData, setProcessedMatrixData] = useState([]); 
  
-  // Growth Section Data 
+  // Growth Section Data  
   const [growthPeriods, setGrowthPeriods] = useState([]); 
   const [selectedGrowthPeriod, setSelectedGrowthPeriod] = useState(''); 
   const [growthChartData, setGrowthChartData] = useState([]); 
   const [growthFYLabels, setGrowthFYLabels] = useState({ current: '', previous: '' }); 
-   
-  // Growth Popup Data 
+ 
+  // Growth Popup Data  
   const [showGrowthPopup, setShowGrowthPopup] = useState(false); 
   const [popupPeriod, setPopupPeriod] = useState("Apr'24 - Mar'25"); 
  
-  // --- Data Fetching --- 
+  // --- CUSTOM LABEL FUNCTION (Fixes Overflow & Centers Text) --- 
+  const RADIAN = Math.PI / 180; 
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => { 
+    // Calculate the radius to be exactly in the middle of the donut ring 
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5; 
+    const x = cx + radius * Math.cos(-midAngle * RADIAN); 
+    const y = cy + radius * Math.sin(-midAngle * RADIAN); 
+ 
+    return ( 
+      <text 
+        x={x} 
+        y={y} 
+        fill="black" 
+        textAnchor="middle" 
+        dominantBaseline="central" 
+        style={{ fontSize: '11px', fontWeight: 'bold' }} 
+      > 
+        {value.toLocaleString()} 
+      </text> 
+    ); 
+  }; 
+ 
+  // --- Data Fetching ---  
   useEffect(() => { 
     const loadData = async () => { 
       try { 
         setLoading(true); 
         setError(null); 
  
-        // Safely load all JSON files 
+        // Safely load all JSON files  
         const modules = import.meta.glob('../data/*.json', { eager: true }); 
-         
+ 
         const getFile = (name) => { 
           const key = Object.keys(modules).find(k => k.includes(name)); 
           return key ? (modules[key].default || modules[key]) : null; 
@@ -76,27 +101,27 @@ const [brokerRawData, setBrokerRawData] = useState({});
         setLobSegmentRawData(lobSegmentJson); 
         setAllData(overallJson); 
  
-        // Initialize Chart Dropdown 
+        // Initialize Chart Dropdown  
         if (Array.isArray(lobJson) && lobJson.length > 0) { 
           const periods = lobJson.map(item => item.Time); 
           setAvailablePeriods(periods); 
           const match = periods.find(p => p.includes(selectedDate?.month)) || periods[0]; 
           setSelectedLobPeriod(match); 
  
-          // Initialize Growth Dropdown (YTD only) 
+          // Initialize Growth Dropdown (YTD only)  
           const ytdPeriods = periods.filter(p => p.toLowerCase().startsWith('april')); 
           setGrowthPeriods(ytdPeriods); 
           const growthMatch = ytdPeriods.find(p => p.includes(selectedDate?.month)) || 
-ytdPeriods[0] || ''; 
+            ytdPeriods[0] || ''; 
           setSelectedGrowthPeriod(growthMatch); 
         } 
  
-        // Initialize Matrix Dropdown 
+        // Initialize Matrix Dropdown  
         const mPeriods = Object.keys(lobSegmentJson); 
         setMatrixPeriods(mPeriods); 
         if (mPeriods.length > 0) { 
-           const match = mPeriods.find(p => p.includes(selectedDate?.month)) || mPeriods[0]; 
-           setSelectedMatrixPeriod(match); 
+          const match = mPeriods.find(p => p.includes(selectedDate?.month)) || mPeriods[0]; 
+          setSelectedMatrixPeriod(match); 
         } 
  
       } catch (err) { 
@@ -110,7 +135,7 @@ ytdPeriods[0] || '';
     loadData(); 
   }, [selectedDate]); 
  
-  // --- Chart Data Processing --- 
+  // --- Chart Data Processing ---  
   useEffect(() => { 
     if (!selectedLobPeriod || !lobRawData || lobRawData.length === 0) return; 
  
@@ -124,7 +149,7 @@ selectedLobPeriod) || {};
     const processedChartData = []; 
     let totalNop = 0, totalPrem = 0, totalEarned = 0, totalClaims = 0; 
  
-    // Fire Split 
+    // Fire Split  
     const fireDwelling = { 
       label: 'FIRE (Dwellings)', 
       nop: getNum(dwellingPeriodData["Total Net Pol"]), 
@@ -190,12 +215,12 @@ item.claims;
     setChartData(processedChartData); 
   }, [selectedLobPeriod, lobRawData, dwellingsRawData]); 
  
-  // --- Broker Table Logic --- 
+  // --- Broker Table Logic ---  
   useEffect(() => { 
     let timeKey = Object.keys(brokerRawData).find(t => t === selectedLobPeriod); 
     if (!timeKey && Object.keys(brokerRawData).length > 0) { 
-       const month = selectedDate?.month; 
-       timeKey = Object.keys(brokerRawData).find(t => t.includes(month)) || 
+      const month = selectedDate?.month; 
+      timeKey = Object.keys(brokerRawData).find(t => t.includes(month)) || 
 Object.keys(brokerRawData)[0]; 
     } 
  
@@ -210,18 +235,17 @@ Object.keys(brokerRawData)[0];
  
     const flattenedBrokers = Object.entries(dataForTime).map(([brokerName, brokerContent]) => { 
       let fire = 0, engg = 0, marine = 0, misc = 0, liability = 0, grandTotal = 0; 
-      let channelName = '';  
+      let channelName = ''; 
  
       Object.entries(brokerContent).forEach(([subChannel, lobData]) => { 
-         channelName = subChannel;  
-         fire += lobData['Fire'] || 0; 
-         engg += lobData['Engineering'] || 0; 
-         marine += lobData['Marine'] || 0; 
-         misc += lobData['Miscellaneous'] || 0; 
-         liability += lobData['Liability'] || 0; 
-         grandTotal += lobData['Grand Total'] || 0; 
+        channelName = subChannel; 
+        fire += lobData['Fire'] || 0; 
+        engg += lobData['Engineering'] || 0; 
+        marine += lobData['Marine'] || 0; 
+        misc += lobData['Miscellaneous'] || 0; 
+        liability += lobData['Liability'] || 0; 
+        grandTotal += lobData['Grand Total'] || 0; 
       }); 
- 
       return { brokerName, channel: channelName, fire, engg, marine, misc, liability, grandTotal }; 
     }); 
  
@@ -261,14 +285,14 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     setBrokerTotalRow(formattedTotal); 
   }, [brokerRawData, selectedLobPeriod, selectedDate]); 
  
-  // --- LOB & Segment Table Logic --- 
+  // --- LOB & Segment Table Logic ---  
   useEffect(() => { 
     if (!selectedMatrixPeriod || !lobSegmentRawData[selectedMatrixPeriod]) { 
       setProcessedMatrixData([]); 
       return; 
     } 
  
-    const data = lobSegmentRawData[selectedMatrixPeriod];  
+    const data = lobSegmentRawData[selectedMatrixPeriod]; 
     const segments = Object.keys(data); 
     const lobs = ['Fire', 'Engineering', 'Miscellaneous', 'Marine', 'Liability']; 
  
@@ -279,7 +303,6 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
       lobs.forEach(lob => { 
         const cellData = data[segment][lob] || { "Total NOP": 0, "Total Prem": 0, "Total Earned Prem": 
 0, "Total Claim incurred in Period": 0 }; 
-         
         const nop = cellData["Total NOP"] || 0; 
         const prem = cellData["Total Prem"] || 0; 
         const earned = cellData["Total Earned Prem"] || 0; 
@@ -312,22 +335,22 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
         let rawClaimsSum = 0; 
  
         if (col === 'Overall') { 
-             Object.values(data).forEach(segData => { 
-               Object.values(segData).forEach(lData => { 
-                 colNop += lData["Total NOP"] || 0; 
-                 rawPremSum += lData["Total Prem"] || 0; 
-                 rawEarnedSum += lData["Total Earned Prem"] || 0; 
-                 rawClaimsSum += lData["Total Claim incurred in Period"] || 0; 
-               }); 
-             }); 
+          Object.values(data).forEach(segData => { 
+            Object.values(segData).forEach(lData => { 
+              colNop += lData["Total NOP"] || 0; 
+              rawPremSum += lData["Total Prem"] || 0; 
+              rawEarnedSum += lData["Total Earned Prem"] || 0; 
+              rawClaimsSum += lData["Total Claim incurred in Period"] || 0; 
+            }); 
+          }); 
         } else { 
-             Object.values(data).forEach(segData => { 
-               const lData = segData[col] || {}; 
-               colNop += lData["Total NOP"] || 0; 
-               rawPremSum += lData["Total Prem"] || 0; 
-               rawEarnedSum += lData["Total Earned Prem"] || 0; 
-               rawClaimsSum += lData["Total Claim incurred in Period"] || 0; 
-             }); 
+          Object.values(data).forEach(segData => { 
+            const lData = segData[col] || {}; 
+            colNop += lData["Total NOP"] || 0; 
+            rawPremSum += lData["Total Prem"] || 0; 
+            rawEarnedSum += lData["Total Earned Prem"] || 0; 
+            rawClaimsSum += lData["Total Claim incurred in Period"] || 0; 
+          }); 
         } 
  
         totalRow[col] = { 
@@ -340,42 +363,41 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     } 
  
     setProcessedMatrixData(rows); 
- 
   }, [selectedMatrixPeriod, lobSegmentRawData]); 
  
-  // --- Growth Section Logic --- 
+  // --- Growth Section Logic ---  
   useEffect(() => { 
     if (!selectedGrowthPeriod || !lobRawData.length) return; 
  
-    // 1. Identify Current and Previous Periods 
+    // 1. Identify Current and Previous Periods  
     const currentPeriod = selectedGrowthPeriod; 
     const prevPeriod = currentPeriod.replace(/(\d{4})-(\d{2})/g, (match, p1, p2) => { 
-        return `${parseInt(p1) - 1}-${parseInt(p2) - 1}`; 
+      return `${parseInt(p1) - 1}-${parseInt(p2) - 1}`; 
     }); 
  
-    // Extract FY String for Legend (e.g. "2025-26" -> "FY '25-26") 
+    // Extract FY String for Legend (e.g. "2025-26" -> "FY '25-26")  
     const extractFY = (periodStr) => { 
-        const match = periodStr.match(/(\d{4}-\d{2})/); 
-        return match ? `FY '${match[1].substring(2)}` : ''; 
+      const match = periodStr.match(/(\d{4}-\d{2})/); 
+      return match ? `FY '${match[1].substring(2)}` : ''; 
     }; 
     setGrowthFYLabels({ 
-        current: extractFY(currentPeriod) || "Current", 
-        previous: extractFY(prevPeriod) || "Previous" 
+      current: extractFY(currentPeriod) || "Current", 
+      previous: extractFY(prevPeriod) || "Previous" 
     }); 
  
-    // 2. Fetch Data 
+    // 2. Fetch Data  
     const currentData = lobRawData.find(d => d.Time === currentPeriod); 
     const prevData = lobRawData.find(d => d.Time === prevPeriod); 
  
     if (!currentData) return; 
  
     const categories = [ 
-      { key: 'FIRE', label: 'FIRE', colors: ['#f97316', '#fdba74'] }, // Dark Orange, Light Orange 
-      { key: 'ENGINEERING', label: 'ENGINEERING', colors: ['#22c55e', '#86efac'] }, // Dark Green, Light Green 
-      { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colors: ['#ffff00', '#fef08a'] }, // Yellows 
-      { key: 'MARINE', label: 'MARINE', colors: ['#1d4ed8', '#93c5fd'] }, // Dark Blue, Light Blue 
-      { key: 'LIABILITY', label: 'LIABILITY', colors: ['#06b6d4', '#67e8f9'] }, // Cyan 
-      { key: 'Total', label: 'OVERALL', colors: ['#f43f5e', '#fda4af'] } // Pink 
+      { key: 'FIRE', label: 'FIRE', colors: ['#f97316', '#fdba74'] }, // Dark Orange, Light Orange  
+      { key: 'ENGINEERING', label: 'ENGINEERING', colors: ['#22c55e', '#86efac'] }, // Dark Green, Light Green  
+      { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colors: ['#ffff00', '#fef08a'] }, // Yellows  
+      { key: 'MARINE', label: 'MARINE', colors: ['#1d4ed8', '#93c5fd'] }, // Dark Blue, Light Blue  
+      { key: 'LIABILITY', label: 'LIABILITY', colors: ['#06b6d4', '#67e8f9'] }, // Cyan  
+      { key: 'Total', label: 'OVERALL', colors: ['#f43f5e', '#fda4af'] } // Pink  
     ]; 
  
     const growthResult = categories.map(cat => { 
@@ -402,33 +424,33 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
       return { 
         key: cat.key, 
         label: cat.label, 
-        currentGWP: Math.round(currentGWP / 1000000),  
-        prevGWP: Math.round(prevGWP / 1000000),  
+        currentGWP: Math.round(currentGWP / 1000000), 
+        prevGWP: Math.round(prevGWP / 1000000), 
         growth: growthPct, 
         colors: cat.colors 
       }; 
     }); 
  
     setGrowthChartData(growthResult); 
- 
   }, [selectedGrowthPeriod, lobRawData]); 
  
  
-  // --- Helpers --- 
+  // --- Helpers ---  
   const getDefaultKey = () => selectedDate?.month === 'July' ? 'YTD July 2025' : 
-selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
+    selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
+ 
   const getMonthName = () => selectedDate?.month || 'May'; 
-   
+ 
   const getGicGepStyle = (val, isOverall) => { 
     if (isOverall) return {}; 
     return val > 90 ? { color: 'red' } : {}; 
   }; 
  
-  // --- Derived Data for OTHER Tables --- 
+  // --- Derived Data for OTHER Tables ---  
   const currentKey = getDefaultKey(); 
   const cordysTatData = allData?.cordysTatDataMap?.[currentKey] || []; 
   const fireUnderData = allData?.fireUnderInsuranceDataMap?.[currentKey] || []; 
-   
+ 
   const inwardMonthKey = selectedDate?.month?.toLowerCase() || 'may'; 
   const inwardFacRaw = allData?.inwardFacDataMap?.[currentKey] || { [inwardMonthKey]: [], 
 ytd: [] }; 
@@ -440,17 +462,14 @@ liability: [], sme: [] };
   const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
   const newInitiativesData = allData?.newInitiativesDataMap?.[currentKey] || ''; 
   const popupData = allData?.popupDataMap?.[popupPeriod] || []; 
-  const staticGrowth = allData?.staticGrowthDataMap?.[currentKey] || []; 
  
   if (loading) return <div className="or-loader-container"><div className="or-loader"></div></div>; 
   if (error) return <div className="or-error-container"><h3>{error}</h3></div>; 
  
-  
-
   return ( 
     <div className="or-main"> 
       <div className="or-top-grid"> 
-         
+ 
         {/* Chart Section */} 
         <div className="or-chart-container"> 
           <div className="or-chart-header"> 
@@ -458,11 +477,13 @@ liability: [], sme: [] };
               <h1 className="or-chart-title"> 
                 LOB wise NOP, GWP and GIC:GEP (GWP in Mn) - {selectedLobPeriod} 
               </h1> 
-              <select  
-                value={selectedLobPeriod}  
+              <select 
+                value={selectedLobPeriod} 
                 onChange={(e) => setSelectedLobPeriod(e.target.value)} 
-                style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', 
-marginRight: '10px', color: '#000', backgroundColor: '#fff', fontWeight: '500' }} 
+                style={{ 
+                  padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', 
+                  marginRight: '10px', color: '#000', backgroundColor: '#fff', fontWeight: '500' 
+                }} 
               > 
                 {availablePeriods.length > 0 ? availablePeriods.map((period, index) => ( 
                   <option key={index} value={period}>{period}</option> 
@@ -476,24 +497,27 @@ marginRight: '10px', color: '#000', backgroundColor: '#fff', fontWeight: '500' }
                 <CartesianGrid strokeDasharray="3 3" /> 
                 <XAxis dataKey="lob" angle={-45} textAnchor="end" height={80} fontSize={9} interval={0} /> 
                 <YAxis yAxisId="left" orientation="left" scale="log" domain={[1, 10000000]} fontSize={9} 
-tickFormatter={(val) => val >= 1000000 ? `${val/1000000}M` : val >= 1000 ? `${val/1000}K` : val} /> 
-                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} fontSize={9} /> 
-                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : [Number(val).toLocaleString(), name]} /> 
+                  tickFormatter={(val) => val >= 1000000 ? `${val / 1000000}M` : val >= 1000 ? `${val / 
+1000}K` : val} /> 
+                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} 
+fontSize={9} /> 
+                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : 
+[Number(val).toLocaleString(), name]} /> 
                 <Legend wrapperStyle={{ fontSize: '10px' }} /> 
                 <Bar yAxisId="left" dataKey="nop" fill="#30cd05" name="NOP" /> 
                 <Bar yAxisId="left" dataKey="gwp_millions" fill="#2563eb" name="GWP (Mn)" /> 
                 <Line yAxisId="right" type="monotone" dataKey="gic_gep" stroke="#e30613" strokeWidth={2} 
-dot={{r:3}} name="GIC:GEP" label={({ x, y, value }) => (<text x={x} y={y - 10} fill="#e30613" 
-fontSize={10} textAnchor="middle" fontWeight="bold">{value}%</text>)} /> 
+                  dot={{ r: 3 }} name="GIC:GEP" label={({ x, y, value }) => (<text x={x} y={y - 10} fill="#e30613" 
+                    fontSize={10} textAnchor="middle" fontWeight="bold">{value}%</text>)} /> 
               </ComposedChart> 
             </ResponsiveContainer> 
           </div> 
           <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', 
 lineHeight: '1.4' }}> 
             Fire is inclusive of Generic New NOP - 8,233 with GWP of Rs. 38 Mn. The drop in Misc. NOP and 
-GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br/> 
+            GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br /> 
             *Engineering -  Commercial -  BAGMANE DEVELOPERS PRIVATE LTD - Rs. 14.88 Crs (Short 
-Circuit Fire) 
+            Circuit Fire) 
           </div> 
         </div> 
  
@@ -531,8 +555,10 @@ Circuit Fire)
                         <td className="or-table-td">{item.liability}</td> 
                       </tr> 
                     ))} 
-                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', fontWeight: 'bold' }}> 
-                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total GWP</td> 
+                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', 
+fontWeight: 'bold' }}> 
+                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total 
+GWP</td> 
                       <td className="or-table-td"></td> 
                       <td className="or-table-td">{brokerTotalRow?.fire}</td> 
                       <td className="or-table-td">{brokerTotalRow?.engg}</td> 
@@ -544,6 +570,7 @@ Circuit Fire)
                 ) : <tr><td colSpan="7" className="or-table-td">No data available</td></tr>} 
               </tbody> 
             </table> 
+ 
           </div> 
         </div> 
       </div> 
@@ -555,14 +582,16 @@ Circuit Fire)
             <h2 className="or-table-title"> 
               LOB & Segment wise Report - {selectedMatrixPeriod} 
             </h2> 
-            <select  
-              value={selectedMatrixPeriod}  
+            <select 
+              value={selectedMatrixPeriod} 
               onChange={(e) => setSelectedMatrixPeriod(e.target.value)} 
-              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', 
-marginRight: '10px', color: '#000', backgroundColor: '#fff' }} 
+              style={{ 
+                padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', 
+                marginRight: '10px', color: '#000', backgroundColor: '#fff' 
+              }} 
             > 
               {matrixPeriods.length > 0 ? matrixPeriods.map(p => ( 
-                 <option key={p} value={p}>{p}</option> 
+                <option key={p} value={p}>{p}</option> 
               )) : <option>No Data</option>} 
             </select> 
           </div> 
@@ -577,10 +606,10 @@ marginRight: '10px', color: '#000', backgroundColor: '#fff' }}
                 <th colSpan={3} className="or-matrix-th-lob lob-miscellaneous">MISCELLANEOUS</th> 
                 <th colSpan={3} className="or-matrix-th-lob lob-marine">MARINE</th> 
                 <th colSpan={3} className="or-matrix-th-lob lob-liability">LIABILITY</th> 
-                <th colSpan={3} className="or-matrix-th-lob lob-overall" style={{ backgroundColor: '#ff00cc', color: 'white' }}>OVERALL</th> 
+                <th colSpan={3} className="or-matrix-th-lob lob-overall" style={{ backgroundColor: 
+'#ff00cc', color: 'white' }}>OVERALL</th> 
               </tr> 
               <tr> 
-                {/* 6 sets of subheaders (5 LOBs + 1 Overall) */} 
                 {[...Array(6)].map((_, i) => ( 
                   <Fragment key={i}> 
                     <th className="or-matrix-th-sub">NOP</th> 
@@ -607,16 +636,17 @@ marginRight: '10px', color: '#000', backgroundColor: '#fff' }}
                     ); 
                   })} 
                 </tr> 
-              )) : <tr><td colSpan="19" className="or-table-td" style={{textAlign:'center'}}>No Data</td></tr>} 
+              )) : <tr><td colSpan="19" className="or-table-td" style={{ textAlign: 'center' }}>No 
+Data</td></tr>} 
             </tbody> 
           </table> 
           <div className="or-note or-note-red" style={{ marginTop: '10px', fontSize: '11px' }}> 
-            *Fire - Commercial : KAMCO CHEW FOOD PRIVATE LTD - 29.31 Crs (Short Circuit Fire) ; Engg - 
-Commercial : BAGMANE DEVELOPERS PRIVATE LTD = 14.88 Crs (Short Circuit Fire) ; Others : MITSUI 
-AND CO LIMITED = 85.24 L (Storm, Cyclone, Typhoon, Tempest, Hurricane, Tornado) ; Marine - 
-Commercial - D LINK INDIA LTD = 2.42 Crs(General Average/ Jettison) , SME : LANEXIS PRIVATE 
-LIMITED- 73.53 L (General Average (GA)); Others - TUBE INVESTMENTS OF INDIA LIMITED- CYCLE 
-DIVISION = 18.83 Lakhs (Wet Damage) 
+            *Fire - Commercial : KAMCO CHEW FOOD PRIVATE LTD - 29.31 Crs (Short Circuit Fire) ; 
+            Engg - Commercial : BAGMANE DEVELOPERS PRIVATE LTD = 14.88 Crs (Short Circuit Fire) ; 
+            Others : MITSUI AND CO LIMITED = 85.24 L (Storm, Cyclone, Typhoon, Tempest, Hurricane, Tornado) ; 
+            Marine - Commercial - D LINK INDIA LTD = 2.42 Crs(General Average/ Jettison) , SME : LANEXIS PRIVATE 
+            LIMITED- 73.53 L (General Average (GA)); 
+            Others - TUBE INVESTMENTS OF INDIA LIMITED- CYCLE DIVISION = 18.83 Lakhs (Wet Damage) 
           </div> 
         </div> 
       </div> 
@@ -626,13 +656,13 @@ DIVISION = 18.83 Lakhs (Wet Damage)
         <div className="or-growth-header"> 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}> 
             <span>LOB wise Growth % ( GWP ) - {selectedGrowthPeriod}</span> 
-            <select  
-                value={selectedGrowthPeriod}  
-                onChange={(e) => setSelectedGrowthPeriod(e.target.value)} 
-                style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', marginLeft: '10px', color: '#000', backgroundColor: '#fff' }} 
+            <select 
+              value={selectedGrowthPeriod} 
+              onChange={(e) => setSelectedGrowthPeriod(e.target.value)} 
+              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', marginLeft: '10px', color: '#000', backgroundColor: '#fff' }} 
             > 
               {growthPeriods.length > 0 ? growthPeriods.map((period, index) => ( 
-                 <option key={index} value={period}>{period}</option> 
+                <option key={index} value={period}>{period}</option> 
               )) : <option>No YTD Data</option>} 
             </select> 
           </div> 
@@ -646,8 +676,8 @@ DIVISION = 18.83 Lakhs (Wet Damage)
                   <PieChart> 
                     <Pie 
                       data={[ 
-                        { name: "Current", value: 1, color: lob.colors[0] }, // Right Side (Current) 
-                        { name: "Previous", value: 1, color: lob.colors[1] },   // Left Side (Previous) 
+                        { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, // Dynamic Values 
+                        { name: "Previous", value: lob.prevGWP, color: lob.colors[1] },   // Dynamic Values 
                       ]} 
                       dataKey="value" 
                       nameKey="name" 
@@ -659,11 +689,13 @@ DIVISION = 18.83 Lakhs (Wet Damage)
                       endAngle={-270} 
                       stroke="white" 
                       strokeWidth={2} 
+                      labelLine={false} // Removes the leader line 
+                      label={renderCustomizedLabel} // Centers text inside the curve 
                     > 
                       { 
                         [ 
-                          { name: "Current", value: 1, color: lob.colors[0] },  
-                          { name: "Previous", value: 1, color: lob.colors[1] } 
+                          { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, 
+                          { name: "Previous", value: lob.prevGWP, color: lob.colors[1] } 
                         ].map((entry, index) => ( 
                           <Cell key={`cell-${index}`} fill={entry.color} /> 
                         )) 
@@ -672,18 +704,13 @@ DIVISION = 18.83 Lakhs (Wet Damage)
                   </PieChart> 
                 </ResponsiveContainer> 
                 {/* Center Value: Growth % */} 
+ 
                 <div className="or-growth-pie-center"> 
                   <div className="or-growth-pie-growth" style={{ fontSize: '14px', fontWeight: 'bold' }}> 
                     {lob.growth}% 
                   </div> 
                 </div> 
-                {/* Labels */} 
-                <div className="or-growth-pie-fy25"> 
-                  {lob.prevGWP} 
-                </div> 
-                <div className="or-growth-pie-fy24"> 
-                  {lob.currentGWP} 
-                </div> 
+ 
               </div> 
             </div> 
           ))} 
@@ -691,25 +718,25 @@ DIVISION = 18.83 Lakhs (Wet Damage)
         {/* Growth Legend */} 
         {growthChartData.length > 0 && ( 
           <div className="or-growth-legend"> 
-             {growthChartData.map(lob => ( 
-                <div key={lob.key} className="or-growth-legend-item"> 
-                   <div style={{ display: 'flex', alignItems: 'center' }}> 
-                      <div className="or-growth-legend-color" style={{ background: lob.colors[0] }}></div> 
-                      <span className="or-growth-legend-label">{lob.label} {growthFYLabels.current} GWP</span> 
-                   </div> 
-                   <div style={{ display: 'flex', alignItems: 'center' }}> 
-                      <div className="or-growth-legend-color" style={{ background: lob.colors[1] }}></div> 
-                      <span className="or-growth-legend-label">{lob.label} {growthFYLabels.previous} GWP</span> 
-                   </div> 
+            {growthChartData.map(lob => ( 
+              <div key={lob.key} className="or-growth-legend-item"> 
+                <div style={{ display: 'flex', alignItems: 'center' }}> 
+                  <div className="or-growth-legend-color" style={{ background: lob.colors[0] }}></div> 
+                  <span className="or-growth-legend-label">{lob.label} {growthFYLabels.current} 
+GWP</span> 
                 </div> 
-             ))} 
+                <div style={{ display: 'flex', alignItems: 'center' }}> 
+                  <div className="or-growth-legend-color" style={{ background: lob.colors[1] }}></div> 
+                  <span className="or-growth-legend-label">{lob.label} {growthFYLabels.previous} 
+GWP</span> 
+                </div> 
+              </div> 
+            ))} 
           </div> 
         )} 
+ 
         <div style={{ textAlign: 'center', marginTop: '15px' }}> 
-          <button onClick={() => setShowGrowthPopup(true)} className="or-growth-btn">
-📊
- Click Here - 
-LOB Segment wise Report Last 5 Years Comparison</button> 
+          <button onClick={() => setShowGrowthPopup(true)} className="or-growth-btn">📊 Click Here - LOB Segment wise Report Last 5 Years Comparison</button> 
         </div> 
       </div> 
  
@@ -722,31 +749,33 @@ LOB Segment wise Report Last 5 Years Comparison</button>
               <thead> 
                 <tr> 
                   <th rowSpan={2} className="or-table-block-th">Month</th><th rowSpan={2} 
-className="or-table-block-th">LOB</th> 
-                  <th colSpan={2} className="or-table-block-th">Same Day</th><th colSpan={2} 
-className="or-table-block-th">Next day</th> 
+                    className="or-table-block-th">LOB</th> 
+                  <th 
+                    colSpan={2} className="or-table-block-th">Same Day</th><th colSpan={2} 
+                      className="or-table-block-th">Next day</th> 
                   <th colSpan={2} className="or-table-block-th">Beyond that</th><th rowSpan={2} 
-className="or-table-block-th">Grand Total</th> 
+                    className="or-table-block-th">Grand Total</th> 
                 </tr> 
                 <tr> 
                   <th className="or-table-block-th">No</th><th className="or-table-block-th">%</th><th 
-className="or-table-block-th">No</th><th className="or-table-block-th">%</th><th 
-className="or-table-block-th">No</th><th className="or-table-block-th">%</th> 
+                    className="or-table-block-th">No</th><th className="or-table-block-th">%</th><th 
+                      className="or-table-block-th">No</th><th className="or-table-block-th">%</th> 
                 </tr> 
               </thead> 
               <tbody> 
                 {cordysTatData.map((row, idx) => ( 
-                  <tr key={idx} className={idx%2===0?"or-table-block-tr-even":"or-table-block-tr-odd"}> 
-                    {(idx===0 || cordysTatData[idx-1].month !== row.month) && <td 
-rowSpan={cordysTatData.filter(r=>r.month===row.month).length} 
-className="or-table-block-td">{row.month}</td>} 
+                  <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : 
+"or-table-block-tr-odd"}> 
+                    {(idx === 0 || cordysTatData[idx - 1].month !== row.month) && <td 
+                      rowSpan={cordysTatData.filter(r => r.month === row.month).length} 
+                      className="or-table-block-td">{row.month}</td>} 
                     <td className="or-table-block-td">{row.lob}</td> 
                     <td className="or-table-block-td">{row.sameDay}</td><td 
-className="or-table-block-td">{row.sameDayPct}</td> 
+                      className="or-table-block-td">{row.sameDayPct}</td> 
                     <td className="or-table-block-td">{row.nextDay}</td><td 
-className="or-table-block-td">{row.nextDayPct}</td> 
+                      className="or-table-block-td">{row.nextDayPct}</td> 
                     <td className="or-table-block-td">{row.beyond}</td><td 
-className="or-table-block-td">{row.beyondPct}</td> 
+                      className="or-table-block-td">{row.beyondPct}</td> 
                     <td className="or-table-block-td">{row.total}</td> 
                   </tr> 
                 ))} 
@@ -761,14 +790,17 @@ className="or-table-block-td">{row.beyondPct}</td>
             <table className="or-table-block-table"> 
               <thead> 
                 <tr> 
-                  <th className="or-table-block-th">Banca Channel</th><th className="or-table-block-th">Claims Paid</th> 
+                  <th className="or-table-block-th">Banca Channel</th><th 
+className="or-table-block-th">Claims Paid</th> 
                   <th className="or-table-block-th">Under insurance est.</th><th 
-className="or-table-block-th">Claims %</th><th className="or-table-block-th">NOC</th> 
+                    className="or-table-block-th">Claims %</th><th 
+className="or-table-block-th">NOC</th> 
                 </tr> 
               </thead> 
               <tbody> 
                 {fireUnderData.map((row, idx) => ( 
-                  <tr key={idx} className={row[0]==='Grand Total'?"or-table-block-tr-total":(idx%2===0?"or-table-block-tr-even":"or-table-block-tr-odd")}> 
+                  <tr key={idx} className={row[0] === 'Grand Total' ? "or-table-block-tr-total" : (idx % 2 === 
+0 ? "or-table-block-tr-even" : "or-table-block-tr-odd")}> 
                     {row.map((cell, i) => <td key={i} className="or-table-block-td">{cell}</td>)} 
                   </tr> 
                 ))} 
@@ -790,30 +822,32 @@ className="or-table-block-th">Claims %</th><th className="or-table-block-th">NOC
               </tr> 
               <tr> 
                 <th className="or-table-block-th">NOP</th><th 
-className="or-table-block-th">GWP</th><th className="or-table-block-th">SI</th><th 
-className="or-table-block-th">GIC</th><th className="or-table-block-th">GEP</th><th 
-className="or-table-block-th">Ratio</th> 
+                  className="or-table-block-th">GWP</th><th className="or-table-block-th">SI</th><th 
+                    className="or-table-block-th">GIC</th><th className="or-table-block-th">GEP</th><th 
+                      className="or-table-block-th">Ratio</th> 
                 <th className="or-table-block-th">NOP</th><th 
-className="or-table-block-th">GWP</th><th className="or-table-block-th">SI</th><th 
-className="or-table-block-th">GIC</th><th className="or-table-block-th">GEP</th><th 
-className="or-table-block-th">Ratio</th> 
+                  className="or-table-block-th">GWP</th><th className="or-table-block-th">SI</th><th 
+                    className="or-table-block-th">GIC</th><th className="or-table-block-th">GEP</th><th 
+                      className="or-table-block-th">Ratio</th> 
               </tr> 
             </thead> 
             <tbody> 
               {inwardMonthData.length > 0 ? inwardMonthData.map((row, idx) => ( 
-                <tr key={idx} className={idx%2===0?"or-table-block-tr-even":"or-table-block-tr-odd"}> 
+                <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : "or-table-block-tr-odd"}> 
                   <td className="or-table-block-td">{row.lob}</td> 
                   <td className="or-table-block-td">{row.nop}</td><td 
-className="or-table-block-td">{row.gwp}</td><td className="or-table-block-td">{row.si}</td><td 
-className="or-table-block-td">{row.gic}</td><td className="or-table-block-td">{row.gep}</td><td 
-className="or-table-block-td">{row.gicgep}</td> 
+                    className="or-table-block-td">{row.gwp}</td><td 
+className="or-table-block-td">{row.si}</td><td 
+                      className="or-table-block-td">{row.gic}</td><td 
+className="or-table-block-td">{row.gep}</td><td 
+                        className="or-table-block-td">{row.gicgep}</td> 
                   {inwardYtdData[idx] ? ( 
                     <><td className="or-table-block-td">{inwardYtdData[idx].nop}</td><td 
-className="or-table-block-td">{inwardYtdData[idx].gwp}</td><td 
-className="or-table-block-td">{inwardYtdData[idx].si}</td><td 
-className="or-table-block-td">{inwardYtdData[idx].gic}</td><td 
-className="or-table-block-td">{inwardYtdData[idx].gep}</td><td 
-className="or-table-block-td">{inwardYtdData[idx].gicgep}</td></> 
+                      className="or-table-block-td">{inwardYtdData[idx].gwp}</td><td 
+                        className="or-table-block-td">{inwardYtdData[idx].si}</td><td 
+                          className="or-table-block-td">{inwardYtdData[idx].gic}</td><td 
+                            className="or-table-block-td">{inwardYtdData[idx].gep}</td><td 
+                              className="or-table-block-td">{inwardYtdData[idx].gicgep}</td></> 
                   ) : <td colSpan={6} className="or-table-block-td">-</td>} 
                 </tr> 
               )) : <tr><td colSpan="13" className="or-table-block-td">No data</td></tr>} 
@@ -844,9 +878,9 @@ fontSize: '11px', marginTop: '0.3rem' }}>
         </div> 
         <div className="or-bottom-right"> 
           <div className="or-bottom-header" style={{ padding: '0.2rem 0', fontSize: '11px' }}>New 
-Initiatives - {getDefaultKey()}</div> 
+            Initiatives - {getDefaultKey()}</div> 
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '9px', lineHeight: '1.2' }} 
-dangerouslySetInnerHTML={{ __html: newInitiativesData }}></div> 
+            dangerouslySetInnerHTML={{ __html: newInitiativesData }}></div> 
           <div className="or-bottom-header or-bottom-header-secondary" style={{ padding: '0.2rem 0', 
 fontSize: '11px', marginTop: '0.3rem' }}> 
             New Business Sourced ({">"}5 lakhs) - {getDefaultKey()} 
@@ -860,19 +894,26 @@ fontSize: '11px', marginTop: '0.3rem' }}>
       </div> 
  
       {showGrowthPopup && ( 
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', 
-display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}> 
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', maxWidth: '95vw', 
-maxHeight: '90vh', overflow: 'auto', position: 'relative' }}> 
-            <button onClick={() => setShowGrowthPopup(false)} style={{ position: 'absolute', top: '10px', 
-right: '15px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' 
-}}>×</button> 
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', 
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 
+        }}> 
+          <div style={{ 
+            backgroundColor: 'white', padding: '20px', borderRadius: '8px', maxWidth: '95vw', 
+            maxHeight: '90vh', overflow: 'auto', position: 'relative' 
+          }}> 
+            <button onClick={() => setShowGrowthPopup(false)} style={{ 
+              position: 'absolute', top: '10px', 
+              right: '15px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' 
+            }}>×</button> 
             <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>LOB wise Growth % (GWP)</h2> 
             <div style={{ marginBottom: '30px' }}> 
-              <h3 style={{ backgroundColor: '#ff6600', color: 'white', padding: '8px', margin: '0 0 10px 0', 
-textAlign: 'center' }}> 
+              <h3 style={{ 
+                backgroundColor: '#ff6600', color: 'white', padding: '8px', margin: '0 0 10px 0', 
+                textAlign: 'center' 
+              }}> 
                 {selectedDate?.month === 'July' ? "Apr'25 - July'25" : selectedDate?.month === 'June' ? 
-"Apr'25 - June'25" : "Apr'25 - May'25"} 
+                  "Apr'25 - June'25" : "Apr'25 - May'25"} 
               </h3> 
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}> 
                 <thead> 
@@ -900,11 +941,11 @@ textAlign: 'center' }}>
                       <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' 
 }}>{row.segment}</td> 
                       {[row.fire_nop, row.fire_gwp, row.fire_gicgep, row.engg_nop, row.engg_gwp, 
-row.engg_gicgep, row.misc_nop, row.misc_gwp, row.misc_gicgep, row.marine_nop, row.marine_gwp, 
-row.marine_gicgep, row.liability_nop, row.liability_gwp, row.liability_gicgep, row.overall_nop, 
-row.overall_gwp, row.overall_gicgep].map((val, idx) => ( 
+                      row.engg_gicgep, row.misc_nop, row.misc_gwp, row.misc_gicgep, row.marine_nop, row.marine_gwp, 
+                      row.marine_gicgep, row.liability_nop, row.liability_gwp, row.liability_gicgep, row.overall_nop, 
+                      row.overall_gwp, row.overall_gicgep].map((val, idx) => ( 
                         <td key={idx} style={{ border: '1px solid #ccc', padding: '4px' }}>{typeof val === 'number' ? 
-val.toLocaleString() : val}</td> 
+                          val.toLocaleString() : val}</td> 
                       ))} 
                     </tr> 
                   ))} 
