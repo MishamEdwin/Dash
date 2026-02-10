@@ -1,41 +1,14 @@
-	• This work is for Upload.jsx component's "FIRE - Banca Channel wise UnderInsurance Report" button.
-	• The uploaded Excel file should be processed and saved as as json file in "src/data/FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT.json" .
-	• If the uploaded file is in this format:
-
-Time	Bank Name	UW Sub Channel	Comm/Hlth SubProduct Name	Claim paid	Num claims registered	Under insurance estimate	NOC
-YTD - December 2025	BOB	Banca PSU	Chola MS Bharat Sookshma Udyam Suraksha policy	134,284,531 	274 	5,523,926 	1 
-YTD - December 2025	INDIAN BANK	Banca PSU	Chola MS Bharat Sookshma Udyam Suraksha policy	48,845,620 	89 	3,696,978 	1 
-YTD - December 2025	PUNJAB NATIONAL BANK	Banca PSU	Chola MS Bharat Sookshma Udyam Suraksha policy	47,553,149 	178 	3,164,090 	1 
-YTD - December 2025	UNION BANK OF INDIA	Banca PSU	Chola MS Bharat Sookshma Udyam Suraksha policy	174,280,441 	217 	2,514,903 	1 
-	• Then the processed data should be in this format:
-	   
-	 
-	{
-	  "Time": "YTD - December 2025",
-	  "Banks": {
-	    "BOB": {
-	      "Comm/Hlth SubProduct Name": "Chola MS Bharat Sookshma Udyam Suraksha policy",
-	      "Total Claim paid": //Aggregate SUM all the Total Claim paid values for this particular Time and Bank,
-	      "Num claims registered"://Aggregate SUM all the Num claims registered values for this particular Time and Bank,
-	      "Under insurance estimate": //Aggregate SUM all the Under insurance estimate values for this particular Time and Bank,
-	      "NOC"://Aggregate SUM all the NOC values for this particular Time and Bank   
-	   },
-	    "INDIAN BANK": {
-	       "Comm/Hlth SubProduct Name": "Chola MS Bharat Sookshma Udyam Suraksha policy",
-	      "Total Claim paid": //Aggregate SUM all the Total Claim paid values for this particular Time and Bank,
-	      "Num claims registered"://Aggregate SUM all the Num claims registered values for this particular Time and Bank,
-	      "Under insurance estimate": //Aggregate SUM all the Under insurance estimate values for this particular Time and Bank,
-	      "NOC"://Aggregate SUM all the NOC values for this particular Time and Bank   
-	    },
-	    "PUNJAB NATIONAL BANK": {
-	       "Comm/Hlth SubProduct Name": "Chola MS Bharat Sookshma Udyam Suraksha policy",
-	      "Total Claim paid": //Aggregate SUM all the Total Claim paid values for this particular Time and Bank,
-	      "Num claims registered"://Aggregate SUM all the Num claims registered values for this particular Time and Bank,
-	      "Under insurance estimate": //Aggregate SUM all the Under insurance estimate values for this particular Time and Bank,
-	      "NOC"://Aggregate SUM all the NOC values for this particular Time and Bank   
-	    }
-	  }
-	}
-	• Leave out the UW Sub Channel .
-	• Please don’t add remove or change any part of the code unnecessarily.
-	• Implement the changes I've asked and give me the complete working code ready to paste.
+	• This work is for OverAllReview.jsx component's "FIRE - Banca wise UnderInsurance Report" part.
+	• I want you to fetch the data from this file "src/data/FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT.json"
+	• The output should be displayed as shown in the image.
+	• The table should display only the values of these fields "BOB, PUNJAB NATIONAL BANK, PARTNERS OTHERS, UNION BANK OF INDIA, OBC, INDIAN BANK, AGENCY, UNITED BANK OF INDIA, CBI, Others" as row headers accordingly.
+	• For the "Claims Paid" column use the "Total Claim paid" field from the json for that particular row header except "OTHERS". 
+For the "Underinsurance estimate" column use the "Under insurance estimate" field from the json for that particular row header except "OTHERS". 
+For the "Underinsurance Claims %" use this formula "(Under Insurance estimate/Claims Paid) * 100" round off the value and display it with % symbol.
+For the "NOC (Underinsurance)" column use the "NOC" field from the json for that particular row header except "OTHERS".
+	• For the "Grand Total" row header " Aggregate SUM all the "Total Claim paid" values from the json for the "Claims Paid" column header, Aggregate SUM all the "Under insurance estimate" values from the json for the "Underinsurance estimate" column header. Based on the Grand Total values of  "Claims Paid" and "Underinsurance estimate" calculate the Grand Total for "Underinsurance Claimns %". Aggregate SUM all the "NOC" from the json for the "NOC(Underinsurance)" column header.
+	For the "OTHERS" row header's "Underinsurance estimate" column value Subtract the Aggregate SUM of all the Underinsurance estimate values of the table from its Grand Total Value.
+	For the "OTHERS" row header's "NOC(Underinsurance)" column value Subtract the Aggregate SUM of all the NOC(Underinsurance) of the table from its Grand Total Value.
+	• The Output should look exactly like the image.
+	• The Time Period which is displayed on the table header should be taken from the json.
+	• Please don't add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
