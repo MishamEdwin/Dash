@@ -14,7 +14,8 @@ const Upload = () => {
   const [brokerFile, setBrokerFile] = useState(null); 
   const [lobSegmentFile, setLobSegmentFile] = useState(null); 
   const [fireBancaFile, setFireBancaFile] = useState(null); 
-  const [newBusinessFile, setNewBusinessFile] = useState(null); // New State 
+  const [newBusinessFile, setNewBusinessFile] = useState(null); 
+  const [newInitiativesFile, setNewInitiativesFile] = useState(null); // New State 
  
   // New state for processing 
   const [processing, setProcessing] = useState(false); 
@@ -37,7 +38,8 @@ const Upload = () => {
     ], 
     Engineering: [ 
       'Portfolio - GWP Mix', 'CPM - Segment & Channel wise Premium contribution', 'IBL _ CPM - Top 15 Risk location wise Premium & Claims Report', 
-      'MBD & EEI - Segment wise Report', 'IBL - CPM Equipment wise Report', 'EAR - Project wise Report', 'CAR - Project wise Report' 
+      'MBD & EEI - Segment wise Report', 'IBL - CPM Equipment wise Report', 'EAR - Project wise Report', 
+'CAR - Project wise Report' 
     ], 
     Marine: [ 
       'Segment wise GWP Mix', 'Segment wise Average Premium & Rate', 'Segment wise Renewal Ratio', 
@@ -100,8 +102,7 @@ const Upload = () => {
  
       if (!grouped[time]) grouped[time] = {}; 
       if (!grouped[time][brokerName]) grouped[time][brokerName] = {}; 
-      if (!grouped[time][brokerName][subChannel]) grouped[time][brokerName][subChannel] = 
-{ "Grand Total": 0 }; 
+      if (!grouped[time][brokerName][subChannel]) grouped[time][brokerName][subChannel] = { "Grand Total": 0 }; 
       if (!grouped[time][brokerName][subChannel][lob]) 
 grouped[time][brokerName][subChannel][lob] = 0; 
  
@@ -249,6 +250,28 @@ grouped[time][brokerName][subChannel][lob] = 0;
     return result; 
   }; 
  
+  // --- Logic: Process New Initiatives --- 
+  const processNewInitiativesFile = (data) => { 
+    const result = { 
+      "Time": "", 
+      "Data": [] 
+    }; 
+ 
+    data.forEach(row => { 
+      // 1. Capture Time from the first row that has it 
+      if (row['Time'] && !result["Time"]) { 
+        result["Time"] = row['Time']; 
+      } 
+ 
+      // 2. Add Data item to array 
+      if (row['Data']) { 
+        result["Data"].push(row['Data']); 
+      } 
+    }); 
+ 
+    return result; 
+  }; 
+ 
   // --- Trigger Download of JSON --- 
   const downloadJson = (data, filename) => { 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 
@@ -344,6 +367,19 @@ grouped[time][brokerName][subChannel][lob] = 0;
       reader.readAsBinaryString(newBusinessFile); 
     } 
  
+    // 7. Process New Initiatives 
+    if (newInitiativesFile) { 
+      const reader = new FileReader(); 
+      reader.onload = (e) => { 
+        const wb = XLSX.read(e.target.result, { type: 'binary' }); 
+        const sheetName = wb.SheetNames[0]; 
+        const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]); 
+        const processedData = processNewInitiativesFile(json); 
+        downloadJson(processedData, "NEW_INITIATIVES.json"); 
+      }; 
+      reader.readAsBinaryString(newInitiativesFile); 
+    } 
+ 
     setTimeout(() => { 
       setProcessing(false); 
       setActiveModal(null); 
@@ -353,6 +389,7 @@ grouped[time][brokerName][subChannel][lob] = 0;
       setLobSegmentFile(null); 
       setFireBancaFile(null); 
       setNewBusinessFile(null); 
+      setNewInitiativesFile(null); 
       alert("Files processed! JSON files have been downloaded. Please move them to 'src/data'."); 
     }, 1000); 
   }; 
@@ -366,6 +403,7 @@ grouped[time][brokerName][subChannel][lob] = 0;
     setLobSegmentFile(null); 
     setFireBancaFile(null); 
     setNewBusinessFile(null); 
+    setNewInitiativesFile(null); 
   }; 
  
   return ( 
@@ -765,6 +803,60 @@ transition-colors ${
                     </button> 
                   </div> 
                 </div> 
+              ) : activeModal === 'New Initiatives' ? ( 
+                /* Layout for New Initiatives */ 
+                <div className="space-y-4"> 
+                  <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3"> 
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" /> 
+                    <p className="text-xs text-blue-800"> 
+                      Upload the New Initiatives Excel file. The system will create a grouped list of initiatives. 
+                    </p> 
+                  </div> 
+ 
+                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 
+transition-colors"> 
+                    <label className="block text-sm font-bold text-gray-700 mb-2">New Initiatives Data 
+File</label> 
+                    <div className="flex items-center gap-3"> 
+                      <label className="flex-1 cursor-pointer"> 
+                        <div className="flex items-center justify-center w-full px-4 py-2 bg-white border 
+border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
+                          {newInitiativesFile ? ( 
+                            <span className="flex items-center text-green-600 gap-2"><CheckCircle 
+className="w-4 h-4" /> Selected</span> 
+                          ) : ( 
+                            <span>Choose Excel File</span> 
+                          )} 
+                        </div> 
+                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => 
+setNewInitiativesFile(e.target.files[0])} /> 
+                      </label> 
+                      {newInitiativesFile && <span className="text-xs text-gray-500 truncate 
+max-w-[100px]">{newInitiativesFile.name}</span>} 
+                    </div> 
+                  </div> 
+ 
+                  <div className="mt-6 flex gap-3"> 
+                    <button 
+                      onClick={closeModal} 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
+                    > 
+                      Cancel 
+                    </button> 
+                    <button 
+                      onClick={handleUploadAndProcess} 
+                      disabled={!newInitiativesFile || processing} 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md transition-colors ${ 
+                        !newInitiativesFile || processing 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
+                        }`} 
+                    > 
+                      {processing ? 'Processing...' : 'Process & Download JSON'} 
+                    </button> 
+                  </div> 
+                </div> 
               ) : ( 
                 /* Default Generic Upload UI */ 
                 <> 
@@ -789,7 +881,8 @@ border-dashed rounded-xl hover:border-blue-400 transition-colors bg-gray-50">
                           <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent 
 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"> 
                             <span>Browse files</span> 
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".xlsx, .xls" /> 
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" 
+accept=".xlsx, .xls" /> 
                           </label> 
                         </div> 
                         <p className="text-xs text-gray-500">Excel files only (max. 10MB)</p> 
@@ -800,11 +893,13 @@ rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-no
                   <div className="mt-8 flex gap-3"> 
                     <button 
                       onClick={closeModal} 
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors" 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
                     > 
                       Cancel 
                     </button> 
-                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md shadow-blue-200 transition-colors"> 
+                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg 
+hover:bg-blue-700 font-medium shadow-md shadow-blue-200 transition-colors"> 
                       Upload File 
                     </button> 
                   </div> 
