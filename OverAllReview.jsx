@@ -1,4 +1,3 @@
- 
 import { useState, useEffect, Fragment } from 'react'; 
 import { 
   Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
@@ -6,7 +5,7 @@ import {
 } from 'recharts'; 
 import '../styles/OverAllReview.css'; 
  
-// Static configuration for Chart LOB columns  
+// Static configuration for Chart LOB columns   
 const chartLobOrder = [ 
   { key: 'FIRE (Dwellings)', label: 'FIRE (Dwellings)', colorClass: 'lob-fire' }, 
   { key: 'FIRE (Non-Dwellings)', label: 'FIRE (Non-Dwellings)', colorClass: 'lob-fire' }, 
@@ -18,44 +17,50 @@ const chartLobOrder = [
 ]; 
  
 const OverAllReview = ({ selectedDate }) => { 
-  // --- State Management ---  
+  // --- State Management ---   
   const [lobRawData, setLobRawData] = useState([]); 
   const [dwellingsRawData, setDwellingsRawData] = useState([]); 
   const [brokerRawData, setBrokerRawData] = useState({}); 
   const [lobSegmentRawData, setLobSegmentRawData] = useState({}); 
+  const [fireBancaRawData, setFireBancaRawData] = useState([]); // New State for Banca Data 
   const [allData, setAllData] = useState({}); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
  
-  // Chart Data  
+  // Chart Data   
   const [availablePeriods, setAvailablePeriods] = useState([]); 
   const [selectedLobPeriod, setSelectedLobPeriod] = useState(''); 
   const [chartData, setChartData] = useState([]); 
  
-  // Broker Table Data  
+  // Broker Table Data   
   const [processedBrokerData, setProcessedBrokerData] = useState([]); 
   const [brokerTotalRow, setBrokerTotalRow] = useState(null); 
   const [brokerHeaderTime, setBrokerHeaderTime] = useState(''); 
  
-  // LOB & Segment Table Data  
+  // LOB & Segment Table Data   
   const [selectedMatrixPeriod, setSelectedMatrixPeriod] = useState(''); 
   const [matrixPeriods, setMatrixPeriods] = useState([]); 
   const [processedMatrixData, setProcessedMatrixData] = useState([]); 
  
-  // Growth Section Data  
+  // Growth Section Data   
   const [growthPeriods, setGrowthPeriods] = useState([]); 
   const [selectedGrowthPeriod, setSelectedGrowthPeriod] = useState(''); 
   const [growthChartData, setGrowthChartData] = useState([]); 
   const [growthFYLabels, setGrowthFYLabels] = useState({ current: '', previous: '' }); 
  
-  // Growth Popup Data  
+  // Fire Banca Table Data (New) 
+  const [processedFireBancaData, setProcessedFireBancaData] = useState([]); 
+  const [fireBancaTotal, setFireBancaTotal] = useState(null); 
+  const [fireBancaTime, setFireBancaTime] = useState(''); 
+ 
+  // Growth Popup Data   
   const [showGrowthPopup, setShowGrowthPopup] = useState(false); 
   const [popupPeriod, setPopupPeriod] = useState("Apr'24 - Mar'25"); 
  
-  // --- CUSTOM LABEL FUNCTION (Fixes Overflow & Centers Text) --- 
+  // --- CUSTOM LABEL FUNCTION (Fixes Overflow & Centers Text) ---  
   const RADIAN = Math.PI / 180; 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => { 
-    // Calculate the radius to be exactly in the middle of the donut ring 
+    // Calculate the radius to be exactly in the middle of the donut ring  
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5; 
     const x = cx + radius * Math.cos(-midAngle * RADIAN); 
     const y = cy + radius * Math.sin(-midAngle * RADIAN); 
@@ -74,14 +79,14 @@ const OverAllReview = ({ selectedDate }) => {
     ); 
   }; 
  
-  // --- Data Fetching ---  
+  // --- Data Fetching ---   
   useEffect(() => { 
     const loadData = async () => { 
       try { 
         setLoading(true); 
         setError(null); 
  
-        // Safely load all JSON files  
+        // Safely load all JSON files   
         const modules = import.meta.glob('../data/*.json', { eager: true }); 
  
         const getFile = (name) => { 
@@ -93,22 +98,25 @@ const OverAllReview = ({ selectedDate }) => {
         const dwellingsJson = getFile('Dwellings') || []; 
         const brokerJson = getFile('BROKER_WISE_REPORT') || {}; 
         const lobSegmentJson = getFile('LOB_AND_SEGMENT_WISE_DATA_02') || {}; 
+        const fireBancaJson = getFile('FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT') || 
+[]; 
         const overallJson = getFile('overall_review_data') || {}; 
  
         setLobRawData(lobJson); 
         setDwellingsRawData(dwellingsJson); 
         setBrokerRawData(brokerJson); 
         setLobSegmentRawData(lobSegmentJson); 
+        setFireBancaRawData(fireBancaJson); 
         setAllData(overallJson); 
  
-        // Initialize Chart Dropdown  
+        // Initialize Chart Dropdown   
         if (Array.isArray(lobJson) && lobJson.length > 0) { 
           const periods = lobJson.map(item => item.Time); 
           setAvailablePeriods(periods); 
           const match = periods.find(p => p.includes(selectedDate?.month)) || periods[0]; 
           setSelectedLobPeriod(match); 
  
-          // Initialize Growth Dropdown (YTD only)  
+          // Initialize Growth Dropdown (YTD only)   
           const ytdPeriods = periods.filter(p => p.toLowerCase().startsWith('april')); 
           setGrowthPeriods(ytdPeriods); 
           const growthMatch = ytdPeriods.find(p => p.includes(selectedDate?.month)) || 
@@ -116,7 +124,7 @@ const OverAllReview = ({ selectedDate }) => {
           setSelectedGrowthPeriod(growthMatch); 
         } 
  
-        // Initialize Matrix Dropdown  
+        // Initialize Matrix Dropdown   
         const mPeriods = Object.keys(lobSegmentJson); 
         setMatrixPeriods(mPeriods); 
         if (mPeriods.length > 0) { 
@@ -135,7 +143,7 @@ const OverAllReview = ({ selectedDate }) => {
     loadData(); 
   }, [selectedDate]); 
  
-  // --- Chart Data Processing ---  
+  // --- Chart Data Processing ---   
   useEffect(() => { 
     if (!selectedLobPeriod || !lobRawData || lobRawData.length === 0) return; 
  
@@ -149,7 +157,7 @@ selectedLobPeriod) || {};
     const processedChartData = []; 
     let totalNop = 0, totalPrem = 0, totalEarned = 0, totalClaims = 0; 
  
-    // Fire Split  
+    // Fire Split   
     const fireDwelling = { 
       label: 'FIRE (Dwellings)', 
       nop: getNum(dwellingPeriodData["Total Net Pol"]), 
@@ -215,7 +223,7 @@ item.claims;
     setChartData(processedChartData); 
   }, [selectedLobPeriod, lobRawData, dwellingsRawData]); 
  
-  // --- Broker Table Logic ---  
+  // --- Broker Table Logic ---   
   useEffect(() => { 
     let timeKey = Object.keys(brokerRawData).find(t => t === selectedLobPeriod); 
     if (!timeKey && Object.keys(brokerRawData).length > 0) { 
@@ -285,7 +293,7 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     setBrokerTotalRow(formattedTotal); 
   }, [brokerRawData, selectedLobPeriod, selectedDate]); 
  
-  // --- LOB & Segment Table Logic ---  
+  // --- LOB & Segment Table Logic ---   
   useEffect(() => { 
     if (!selectedMatrixPeriod || !lobSegmentRawData[selectedMatrixPeriod]) { 
       setProcessedMatrixData([]); 
@@ -314,7 +322,8 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
           gicgep: earned !== 0 ? Math.round((claims / earned) * 100) : 0 
         }; 
  
-        rowNop += nop; rowPrem += prem; rowEarned += earned; rowClaims += claims; 
+        rowNop += nop; 
+        rowPrem += prem; rowEarned += earned; rowClaims += claims; 
       }); 
  
       rowData['Overall'] = { 
@@ -365,17 +374,17 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     setProcessedMatrixData(rows); 
   }, [selectedMatrixPeriod, lobSegmentRawData]); 
  
-  // --- Growth Section Logic ---  
+  // --- Growth Section Logic ---   
   useEffect(() => { 
     if (!selectedGrowthPeriod || !lobRawData.length) return; 
  
-    // 1. Identify Current and Previous Periods  
+    // 1. Identify Current and Previous Periods   
     const currentPeriod = selectedGrowthPeriod; 
     const prevPeriod = currentPeriod.replace(/(\d{4})-(\d{2})/g, (match, p1, p2) => { 
       return `${parseInt(p1) - 1}-${parseInt(p2) - 1}`; 
     }); 
  
-    // Extract FY String for Legend (e.g. "2025-26" -> "FY '25-26")  
+    // Extract FY String for Legend (e.g. "2025-26" -> "FY '25-26")   
     const extractFY = (periodStr) => { 
       const match = periodStr.match(/(\d{4}-\d{2})/); 
       return match ? `FY '${match[1].substring(2)}` : ''; 
@@ -385,19 +394,19 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
       previous: extractFY(prevPeriod) || "Previous" 
     }); 
  
-    // 2. Fetch Data  
+    // 2. Fetch Data   
     const currentData = lobRawData.find(d => d.Time === currentPeriod); 
     const prevData = lobRawData.find(d => d.Time === prevPeriod); 
  
     if (!currentData) return; 
  
     const categories = [ 
-      { key: 'FIRE', label: 'FIRE', colors: ['#f97316', '#fdba74'] }, // Dark Orange, Light Orange  
-      { key: 'ENGINEERING', label: 'ENGINEERING', colors: ['#22c55e', '#86efac'] }, // Dark Green, Light Green  
-      { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colors: ['#ffff00', '#fef08a'] }, // Yellows  
-      { key: 'MARINE', label: 'MARINE', colors: ['#1d4ed8', '#93c5fd'] }, // Dark Blue, Light Blue  
-      { key: 'LIABILITY', label: 'LIABILITY', colors: ['#06b6d4', '#67e8f9'] }, // Cyan  
-      { key: 'Total', label: 'OVERALL', colors: ['#f43f5e', '#fda4af'] } // Pink  
+      { key: 'FIRE', label: 'FIRE', colors: ['#f97316', '#fdba74'] }, // Dark Orange, Light Orange   
+      { key: 'ENGINEERING', label: 'ENGINEERING', colors: ['#22c55e', '#86efac'] }, // Dark Green, Light Green   
+      { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colors: ['#ffff00', '#fef08a'] }, // Yellows   
+      { key: 'MARINE', label: 'MARINE', colors: ['#1d4ed8', '#93c5fd'] }, // Dark Blue, Light Blue   
+      { key: 'LIABILITY', label: 'LIABILITY', colors: ['#06b6d4', '#67e8f9'] }, // Cyan   
+      { key: 'Total', label: 'OVERALL', colors: ['#f43f5e', '#fda4af'] } // Pink   
     ]; 
  
     const growthResult = categories.map(cat => { 
@@ -434,11 +443,111 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     setGrowthChartData(growthResult); 
   }, [selectedGrowthPeriod, lobRawData]); 
  
+  // --- FIRE BANCA REPORT LOGIC (Updated to ROUND OFF values) --- 
+  useEffect(() => { 
+    // 1. Find the dataset for the selected period 
+    let foundData = null; 
+    if (fireBancaRawData.length > 0) { 
+      const month = selectedDate?.month; 
+      // Try exact match or inclusion 
+      foundData = fireBancaRawData.find(d => d.Time && d.Time.includes(month)) || 
+fireBancaRawData[0]; 
+    } 
  
-  // --- Helpers ---  
+    if (!foundData || !foundData.Banks) { 
+      setProcessedFireBancaData([]); 
+      setFireBancaTime(''); 
+      setFireBancaTotal(null); 
+      return; 
+    } 
+ 
+    setFireBancaTime(foundData.Time); 
+ 
+    // 2. Calculate Grand Totals (Sum of ALL banks in JSON) -> Accumulate RAW first for precision 
+    let grandTotalClaimsRaw = 0; 
+    let grandTotalEstRaw = 0; 
+    let grandTotalNOCRaw = 0; 
+ 
+    Object.values(foundData.Banks).forEach(bank => { 
+      grandTotalClaimsRaw += (bank["Total Claim paid"] || 0); 
+      grandTotalEstRaw += (bank["Under insurance estimate"] || 0); 
+      grandTotalNOCRaw += (bank["NOC"] || 0); 
+    }); 
+ 
+    // 3. Process Specific Listed Banks (Round off their values) 
+    const targetBanks = [ 
+      'BOB', 'PNB', 'PARTNERS OTHERS', 'UNION BANK', 'OBC', 
+      'INDIAN BANK', 'AGENCY', 'UNITED BANK OF INDIA', 'CBI' 
+    ]; 
+ 
+    let namedClaimsSum = 0; 
+    let namedEstSum = 0; 
+    let namedNOCSum = 0; 
+ 
+    const rows = targetBanks.map(bankName => { 
+      const bankData = foundData.Banks[bankName] || { 
+        "Total Claim paid": 0, 
+        "Under insurance estimate": 0, 
+        "NOC": 0 
+      }; 
+ 
+      // ROUND values for the specific row 
+      const claims = Math.round(bankData["Total Claim paid"] || 0); 
+      const est = Math.round(bankData["Under insurance estimate"] || 0); 
+      const noc = Math.round(bankData["NOC"] || 0); 
+ 
+      // Accumulate the ROUNDED values to ensure consistency with "Others" calculation 
+      namedClaimsSum += claims; 
+      namedEstSum += est; 
+      namedNOCSum += noc; 
+ 
+      const pct = claims !== 0 ? Math.round((est / claims) * 100) : 0; 
+ 
+      return { 
+        name: bankName, 
+        claims: claims, 
+        est: est, 
+        pct: pct, 
+        noc: noc 
+      }; 
+    }); 
+ 
+    // 4. Calculate "Others" (Rounded Grand Total - Sum of Rounded Named Banks) 
+    const totalClaimsRounded = Math.round(grandTotalClaimsRaw); 
+    const totalEstRounded = Math.round(grandTotalEstRaw); 
+    const totalNOCRounded = Math.round(grandTotalNOCRaw); 
+ 
+    const othersClaims = totalClaimsRounded - namedClaimsSum; 
+    const othersEst = totalEstRounded - namedEstSum; 
+    const othersNOC = totalNOCRounded - namedNOCSum; 
+    const othersPct = othersClaims !== 0 ? Math.round((othersEst / othersClaims) * 100) : 0; 
+ 
+    rows.push({ 
+      name: 'OTHERS', 
+      claims: othersClaims, 
+      est: othersEst, 
+      pct: othersPct, 
+      noc: othersNOC 
+    }); 
+ 
+    // 5. Calculate Grand Total Percentage from rounded totals 
+    const totalPct = totalClaimsRounded !== 0 ? Math.round((totalEstRounded / 
+totalClaimsRounded) * 100) : 0; 
+ 
+    setProcessedFireBancaData(rows); 
+    setFireBancaTotal({ 
+      claims: totalClaimsRounded, 
+      est: totalEstRounded, 
+      pct: totalPct, 
+      noc: totalNOCRounded 
+    }); 
+ 
+  }, [fireBancaRawData, selectedDate]); 
+ 
+ 
+  // --- Helpers ---   
   const getDefaultKey = () => selectedDate?.month === 'July' ? 'YTD July 2025' : 
     selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
- 
   const getMonthName = () => selectedDate?.month || 'May'; 
  
   const getGicGepStyle = (val, isOverall) => { 
@@ -446,17 +555,15 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     return val > 90 ? { color: 'red' } : {}; 
   }; 
  
-  // --- Derived Data for OTHER Tables ---  
+  // --- Derived Data for OTHER Tables ---   
   const currentKey = getDefaultKey(); 
   const cordysTatData = allData?.cordysTatDataMap?.[currentKey] || []; 
-  const fireUnderData = allData?.fireUnderInsuranceDataMap?.[currentKey] || []; 
  
   const inwardMonthKey = selectedDate?.month?.toLowerCase() || 'may'; 
   const inwardFacRaw = allData?.inwardFacDataMap?.[currentKey] || { [inwardMonthKey]: [], 
 ytd: [] }; 
   const inwardMonthData = inwardFacRaw[inwardMonthKey] || []; 
   const inwardYtdData = inwardFacRaw.ytd || []; 
- 
   const newBusinessData = allData?.newBusinessDataMap?.[currentKey] || { commercial: [], 
 liability: [], sme: [] }; 
   const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
@@ -545,8 +652,10 @@ lineHeight: '1.4' }}>
                 {processedBrokerData.length > 0 ? ( 
                   <> 
                     {processedBrokerData.map((item, index) => ( 
-                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 'or-table-tr-others' : ''}`}> 
-                        <td className="or-table-td or-table-td-broker"><div className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div></td> 
+                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 
+'or-table-tr-others' : ''}`}> 
+                        <td className="or-table-td or-table-td-broker"><div 
+className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div></td> 
                         <td className="or-table-td">{item.channel}</td> 
                         <td className="or-table-td">{item.fire}</td> 
                         <td className="or-table-td">{item.engg}</td> 
@@ -629,7 +738,8 @@ GWP</td>
                       <Fragment key={colKey}> 
                         <td className="or-matrix-td-nop">{cell.nop ? cell.nop.toLocaleString() : '-'}</td> 
                         <td className="or-matrix-td-gwp">{cell.gwp ? cell.gwp.toLocaleString() : '-'}</td> 
-                        <td className="or-matrix-td-gicgep" style={getGicGepStyle(cell.gicgep, colKey === 'Overall')}> 
+                        <td className="or-matrix-td-gicgep" style={getGicGepStyle(cell.gicgep, colKey === 
+'Overall')}> 
                           {cell.gicgep ? cell.gicgep + '%' : '0%'} 
                         </td> 
                       </Fragment> 
@@ -643,8 +753,10 @@ Data</td></tr>}
           <div className="or-note or-note-red" style={{ marginTop: '10px', fontSize: '11px' }}> 
             *Fire - Commercial : KAMCO CHEW FOOD PRIVATE LTD - 29.31 Crs (Short Circuit Fire) ; 
             Engg - Commercial : BAGMANE DEVELOPERS PRIVATE LTD = 14.88 Crs (Short Circuit Fire) ; 
-            Others : MITSUI AND CO LIMITED = 85.24 L (Storm, Cyclone, Typhoon, Tempest, Hurricane, Tornado) ; 
-            Marine - Commercial - D LINK INDIA LTD = 2.42 Crs(General Average/ Jettison) , SME : LANEXIS PRIVATE 
+            Others : MITSUI AND CO LIMITED = 85.24 L (Storm, Cyclone, Typhoon, Tempest, Hurricane, 
+Tornado) ; 
+            Marine - Commercial - D LINK INDIA LTD = 2.42 Crs(General Average/ Jettison) , SME : LANEXIS 
+PRIVATE 
             LIMITED- 73.53 L (General Average (GA)); 
             Others - TUBE INVESTMENTS OF INDIA LIMITED- CYCLE DIVISION = 18.83 Lakhs (Wet Damage) 
           </div> 
@@ -659,7 +771,8 @@ Data</td></tr>}
             <select 
               value={selectedGrowthPeriod} 
               onChange={(e) => setSelectedGrowthPeriod(e.target.value)} 
-              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', marginLeft: '10px', color: '#000', backgroundColor: '#fff' }} 
+              style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', 
+marginLeft: '10px', color: '#000', backgroundColor: '#fff' }} 
             > 
               {growthPeriods.length > 0 ? growthPeriods.map((period, index) => ( 
                 <option key={index} value={period}>{period}</option> 
@@ -670,14 +783,15 @@ Data</td></tr>}
         <div className="or-growth-charts" style={{ justifyContent: 'space-between', gap: '0.5rem' }}> 
           {growthChartData.map((lob) => ( 
             <div key={lob.key} className="or-growth-chart-item" style={{ minWidth: 100 }}> 
-              <div className="or-growth-chart-label" style={{ fontSize: '13px', fontWeight: 600 }}>{lob.label}</div> 
+              <div className="or-growth-chart-label" style={{ fontSize: '13px', fontWeight: 600 
+}}>{lob.label}</div> 
               <div className="or-growth-pie-container" style={{ width: 140, height: 140 }}> 
                 <ResponsiveContainer height={140}> 
                   <PieChart> 
                     <Pie 
                       data={[ 
-                        { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, // Dynamic Values 
-                        { name: "Previous", value: lob.prevGWP, color: lob.colors[1] },   // Dynamic Values 
+                        { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, // Dynamic Values  
+                        { name: "Previous", value: lob.prevGWP, color: lob.colors[1] },   // Dynamic Values  
                       ]} 
                       dataKey="value" 
                       nameKey="name" 
@@ -689,8 +803,8 @@ Data</td></tr>}
                       endAngle={-270} 
                       stroke="white" 
                       strokeWidth={2} 
-                      labelLine={false} // Removes the leader line 
-                      label={renderCustomizedLabel} // Centers text inside the curve 
+                      labelLine={false} // Removes the leader line  
+                      label={renderCustomizedLabel} // Centers text inside the curve  
                     > 
                       { 
                         [ 
@@ -736,7 +850,10 @@ GWP</span>
         )} 
  
         <div style={{ textAlign: 'center', marginTop: '15px' }}> 
-          <button onClick={() => setShowGrowthPopup(true)} className="or-growth-btn">📊 Click Here - LOB Segment wise Report Last 5 Years Comparison</button> 
+          <button onClick={() => setShowGrowthPopup(true)} className="or-growth-btn">
+📊
+ Click Here - 
+LOB Segment wise Report Last 5 Years Comparison</button> 
         </div> 
       </div> 
  
@@ -784,26 +901,42 @@ GWP</span>
           </div> 
  
           <div className="or-table-block"> 
-            <div className="or-table-block-header"> 
-              FIRE - Banca Channel wise UnderInsurance Report - {getDefaultKey()} 
+            <div className="or-table-block-header" style={{ backgroundColor: '#ff0066', color: 'white' }}> 
+              FIRE - Banca Channel wise UnderInsurance Report - {fireBancaTime} 
             </div> 
             <table className="or-table-block-table"> 
               <thead> 
-                <tr> 
-                  <th className="or-table-block-th">Banca Channel</th><th 
-className="or-table-block-th">Claims Paid</th> 
-                  <th className="or-table-block-th">Under insurance est.</th><th 
-                    className="or-table-block-th">Claims %</th><th 
-className="or-table-block-th">NOC</th> 
+                <tr style={{ backgroundColor: '#ff99cc' }}> 
+                  <th className="or-table-block-th">Banca Channel</th> 
+                  <th className="or-table-block-th">Claims Paid</th> 
+                  <th className="or-table-block-th">Under insurance estimate</th> 
+                  <th className="or-table-block-th">Underinsurance Claims %</th> 
+                  <th className="or-table-block-th">NOC (Underinsurance)</th> 
                 </tr> 
               </thead> 
               <tbody> 
-                {fireUnderData.map((row, idx) => ( 
-                  <tr key={idx} className={row[0] === 'Grand Total' ? "or-table-block-tr-total" : (idx % 2 === 
-0 ? "or-table-block-tr-even" : "or-table-block-tr-odd")}> 
-                    {row.map((cell, i) => <td key={i} className="or-table-block-td">{cell}</td>)} 
-                  </tr> 
-                ))} 
+                {processedFireBancaData.length > 0 ? ( 
+                  <> 
+                    {processedFireBancaData.map((row, idx) => ( 
+                      <tr key={idx} className="or-table-block-tr-even"> 
+                        <td className="or-table-block-td">{row.name}</td> 
+                        <td className="or-table-block-td">{row.claims.toLocaleString()}</td> 
+                        <td className="or-table-block-td">{row.est.toLocaleString()}</td> 
+                        <td className="or-table-block-td">{row.pct}%</td> 
+                        <td className="or-table-block-td">{row.noc}</td> 
+                      </tr> 
+                    ))} 
+                    {fireBancaTotal && ( 
+                      <tr style={{ backgroundColor: '#ff99cc', fontWeight: 'bold' }}> 
+                        <td className="or-table-block-td">Grand Total</td> 
+                        <td className="or-table-block-td">{fireBancaTotal.claims.toLocaleString()}</td> 
+                        <td className="or-table-block-td">{fireBancaTotal.est.toLocaleString()}</td> 
+                        <td className="or-table-block-td">{fireBancaTotal.pct}%</td> 
+                        <td className="or-table-block-td">{fireBancaTotal.noc}</td> 
+                      </tr> 
+                    )} 
+                  </> 
+                ) : <tr><td colSpan="5" className="or-table-block-td">No data</td></tr>} 
               </tbody> 
             </table> 
           </div> 
@@ -938,8 +1071,7 @@ fontSize: '11px', marginTop: '0.3rem' }}>
                 <tbody> 
                   {popupData.map((row, i) => ( 
                     <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}> 
-                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' 
-}}>{row.segment}</td> 
+                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' }}>{row.segment}</td> 
                       {[row.fire_nop, row.fire_gwp, row.fire_gicgep, row.engg_nop, row.engg_gwp, 
                       row.engg_gicgep, row.misc_nop, row.misc_gwp, row.misc_gicgep, row.marine_nop, row.marine_gwp, 
                       row.marine_gicgep, row.liability_nop, row.liability_gwp, row.liability_gicgep, row.overall_nop, 
