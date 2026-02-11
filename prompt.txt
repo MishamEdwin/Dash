@@ -1,17 +1,11 @@
-	• This work is for Upload.jsx component's "New Initiatives" button.
-	• The uploaded Excel file should be processed and saved as as json file in "src/data/NEW_INITIATIVES.json".
-	• If the uploaded data is in this format:
-	Time	Data
-	December 2025	1. Provided Group Home CGR Rater for Manappuram Home Finance Ltd.
-		2. Provided Shop package rater for Radhakrishna Finance Private Ltd. 
-		
-	
-	• Then the data should be saved as:
-	"Time":"December 2025"{
-		"Data":{
-			1. Provided Group Home CGR Rater for Manappuram Home Finance Ltd.
-			2. Provided Shop package rater for Radhakrishna Finance Private Ltd. 
-		}
+	• This work is for OverAllReview.jsx component's "New Initiatives" part.
+	• I want to fetch the data from this file "src/data/NEW_INITIATIVES.json" and displayed as shown in the image.
+	• The Time Period mentioned in the table header should be taken from the json.
+	• This is how the data is stored in the json:
+	{
+	  "Time": "December 2025",
+	  "Data": [
+	    "1. Provided Group Home CGR Rater for Manappuram Home Finance Ltd.\r\n2. Provided Shop package rater for Radhakrishna Finance Private Ltd. "
+	  ]
 	}
-	• Please don’t add, remove or change any part of the code unnecessarily. 
-Implement the changes I've asked and give me the complete working code ready to paste.
+  Please don't add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
