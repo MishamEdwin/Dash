@@ -22,7 +22,8 @@ const OverAllReview = ({ selectedDate }) => {
   const [dwellingsRawData, setDwellingsRawData] = useState([]); 
   const [brokerRawData, setBrokerRawData] = useState({}); 
   const [lobSegmentRawData, setLobSegmentRawData] = useState({}); 
-  const [fireBancaRawData, setFireBancaRawData] = useState([]); // New State for Banca Data 
+  const [fireBancaRawData, setFireBancaRawData] = useState([]); 
+  const [newBusinessSourcedData, setNewBusinessSourcedData] = useState({}); // New State 
   const [allData, setAllData] = useState({}); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
@@ -48,7 +49,7 @@ const OverAllReview = ({ selectedDate }) => {
   const [growthChartData, setGrowthChartData] = useState([]); 
   const [growthFYLabels, setGrowthFYLabels] = useState({ current: '', previous: '' }); 
  
-  // Fire Banca Table Data (New) 
+  // Fire Banca Table Data 
   const [processedFireBancaData, setProcessedFireBancaData] = useState([]); 
   const [fireBancaTotal, setFireBancaTotal] = useState(null); 
   const [fireBancaTime, setFireBancaTime] = useState(''); 
@@ -100,6 +101,7 @@ const OverAllReview = ({ selectedDate }) => {
         const lobSegmentJson = getFile('LOB_AND_SEGMENT_WISE_DATA_02') || {}; 
         const fireBancaJson = getFile('FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT') || 
 []; 
+        const newBusinessJson = getFile('NEW_BUSINESS_SOURCED') || {}; 
         const overallJson = getFile('overall_review_data') || {}; 
  
         setLobRawData(lobJson); 
@@ -107,6 +109,7 @@ const OverAllReview = ({ selectedDate }) => {
         setBrokerRawData(brokerJson); 
         setLobSegmentRawData(lobSegmentJson); 
         setFireBancaRawData(fireBancaJson); 
+        setNewBusinessSourcedData(newBusinessJson); 
         setAllData(overallJson); 
  
         // Initialize Chart Dropdown   
@@ -445,11 +448,9 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
  
   // --- FIRE BANCA REPORT LOGIC (Updated to ROUND OFF values) --- 
   useEffect(() => { 
-    // 1. Find the dataset for the selected period 
     let foundData = null; 
     if (fireBancaRawData.length > 0) { 
       const month = selectedDate?.month; 
-      // Try exact match or inclusion 
       foundData = fireBancaRawData.find(d => d.Time && d.Time.includes(month)) || 
 fireBancaRawData[0]; 
     } 
@@ -463,7 +464,6 @@ fireBancaRawData[0];
  
     setFireBancaTime(foundData.Time); 
  
-    // 2. Calculate Grand Totals (Sum of ALL banks in JSON) -> Accumulate RAW first for precision 
     let grandTotalClaimsRaw = 0; 
     let grandTotalEstRaw = 0; 
     let grandTotalNOCRaw = 0; 
@@ -474,7 +474,6 @@ fireBancaRawData[0];
       grandTotalNOCRaw += (bank["NOC"] || 0); 
     }); 
  
-    // 3. Process Specific Listed Banks (Round off their values) 
     const targetBanks = [ 
       'BOB', 'PNB', 'PARTNERS OTHERS', 'UNION BANK', 'OBC', 
       'INDIAN BANK', 'AGENCY', 'UNITED BANK OF INDIA', 'CBI' 
@@ -491,12 +490,10 @@ fireBancaRawData[0];
         "NOC": 0 
       }; 
  
-      // ROUND values for the specific row 
       const claims = Math.round(bankData["Total Claim paid"] || 0); 
       const est = Math.round(bankData["Under insurance estimate"] || 0); 
       const noc = Math.round(bankData["NOC"] || 0); 
  
-      // Accumulate the ROUNDED values to ensure consistency with "Others" calculation 
       namedClaimsSum += claims; 
       namedEstSum += est; 
       namedNOCSum += noc; 
@@ -512,7 +509,6 @@ fireBancaRawData[0];
       }; 
     }); 
  
-    // 4. Calculate "Others" (Rounded Grand Total - Sum of Rounded Named Banks) 
     const totalClaimsRounded = Math.round(grandTotalClaimsRaw); 
     const totalEstRounded = Math.round(grandTotalEstRaw); 
     const totalNOCRounded = Math.round(grandTotalNOCRaw); 
@@ -530,7 +526,6 @@ fireBancaRawData[0];
       noc: othersNOC 
     }); 
  
-    // 5. Calculate Grand Total Percentage from rounded totals 
     const totalPct = totalClaimsRounded !== 0 ? Math.round((totalEstRounded / 
 totalClaimsRounded) * 100) : 0; 
  
@@ -564,8 +559,7 @@ totalClaimsRounded) * 100) : 0;
 ytd: [] }; 
   const inwardMonthData = inwardFacRaw[inwardMonthKey] || []; 
   const inwardYtdData = inwardFacRaw.ytd || []; 
-  const newBusinessData = allData?.newBusinessDataMap?.[currentKey] || { commercial: [], 
-liability: [], sme: [] }; 
+   
   const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
   const newInitiativesData = allData?.newInitiativesDataMap?.[currentKey] || ''; 
   const popupData = allData?.popupDataMap?.[popupPeriod] || []; 
@@ -604,12 +598,9 @@ liability: [], sme: [] };
                 <CartesianGrid strokeDasharray="3 3" /> 
                 <XAxis dataKey="lob" angle={-45} textAnchor="end" height={80} fontSize={9} interval={0} /> 
                 <YAxis yAxisId="left" orientation="left" scale="log" domain={[1, 10000000]} fontSize={9} 
-                  tickFormatter={(val) => val >= 1000000 ? `${val / 1000000}M` : val >= 1000 ? `${val / 
-1000}K` : val} /> 
-                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} 
-fontSize={9} /> 
-                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : 
-[Number(val).toLocaleString(), name]} /> 
+                  tickFormatter={(val) => val >= 1000000 ? `${val / 1000000}M` : val >= 1000 ? `${val / 1000}K` : val} /> 
+                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} fontSize={9} /> 
+                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : [Number(val).toLocaleString(), name]} /> 
                 <Legend wrapperStyle={{ fontSize: '10px' }} /> 
                 <Bar yAxisId="left" dataKey="nop" fill="#30cd05" name="NOP" /> 
                 <Bar yAxisId="left" dataKey="gwp_millions" fill="#2563eb" name="GWP (Mn)" /> 
@@ -619,8 +610,7 @@ fontSize={9} />
               </ComposedChart> 
             </ResponsiveContainer> 
           </div> 
-          <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', 
-lineHeight: '1.4' }}> 
+          <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', lineHeight: '1.4' }}> 
             Fire is inclusive of Generic New NOP - 8,233 with GWP of Rs. 38 Mn. The drop in Misc. NOP and 
             GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br /> 
             *Engineering -  Commercial -  BAGMANE DEVELOPERS PRIVATE LTD - Rs. 14.88 Crs (Short 
@@ -652,10 +642,8 @@ lineHeight: '1.4' }}>
                 {processedBrokerData.length > 0 ? ( 
                   <> 
                     {processedBrokerData.map((item, index) => ( 
-                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 
-'or-table-tr-others' : ''}`}> 
-                        <td className="or-table-td or-table-td-broker"><div 
-className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div></td> 
+                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 'or-table-tr-others' : ''}`}> 
+                        <td className="or-table-td or-table-td-broker"><div className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div></td> 
                         <td className="or-table-td">{item.channel}</td> 
                         <td className="or-table-td">{item.fire}</td> 
                         <td className="or-table-td">{item.engg}</td> 
@@ -664,10 +652,8 @@ className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div>
                         <td className="or-table-td">{item.liability}</td> 
                       </tr> 
                     ))} 
-                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', 
-fontWeight: 'bold' }}> 
-                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total 
-GWP</td> 
+                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', fontWeight: 'bold' }}> 
+                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total GWP</td> 
                       <td className="or-table-td"></td> 
                       <td className="or-table-td">{brokerTotalRow?.fire}</td> 
                       <td className="or-table-td">{brokerTotalRow?.engg}</td> 
@@ -715,8 +701,7 @@ GWP</td>
                 <th colSpan={3} className="or-matrix-th-lob lob-miscellaneous">MISCELLANEOUS</th> 
                 <th colSpan={3} className="or-matrix-th-lob lob-marine">MARINE</th> 
                 <th colSpan={3} className="or-matrix-th-lob lob-liability">LIABILITY</th> 
-                <th colSpan={3} className="or-matrix-th-lob lob-overall" style={{ backgroundColor: 
-'#ff00cc', color: 'white' }}>OVERALL</th> 
+                <th colSpan={3} className="or-matrix-th-lob lob-overall" style={{ backgroundColor: '#ff00cc', color: 'white' }}>OVERALL</th> 
               </tr> 
               <tr> 
                 {[...Array(6)].map((_, i) => ( 
@@ -738,16 +723,14 @@ GWP</td>
                       <Fragment key={colKey}> 
                         <td className="or-matrix-td-nop">{cell.nop ? cell.nop.toLocaleString() : '-'}</td> 
                         <td className="or-matrix-td-gwp">{cell.gwp ? cell.gwp.toLocaleString() : '-'}</td> 
-                        <td className="or-matrix-td-gicgep" style={getGicGepStyle(cell.gicgep, colKey === 
-'Overall')}> 
+                        <td className="or-matrix-td-gicgep" style={getGicGepStyle(cell.gicgep, colKey === 'Overall')}> 
                           {cell.gicgep ? cell.gicgep + '%' : '0%'} 
                         </td> 
                       </Fragment> 
                     ); 
                   })} 
                 </tr> 
-              )) : <tr><td colSpan="19" className="or-table-td" style={{ textAlign: 'center' }}>No 
-Data</td></tr>} 
+              )) : <tr><td colSpan="19" className="or-table-td" style={{ textAlign: 'center' }}>No Data</td></tr>} 
             </tbody> 
           </table> 
           <div className="or-note or-note-red" style={{ marginTop: '10px', fontSize: '11px' }}> 
@@ -881,8 +864,7 @@ LOB Segment wise Report Last 5 Years Comparison</button>
               </thead> 
               <tbody> 
                 {cordysTatData.map((row, idx) => ( 
-                  <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : 
-"or-table-block-tr-odd"}> 
+                  <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : "or-table-block-tr-odd"}> 
                     {(idx === 0 || cordysTatData[idx - 1].month !== row.month) && <td 
                       rowSpan={cordysTatData.filter(r => r.month === row.month).length} 
                       className="or-table-block-td">{row.month}</td>} 
@@ -969,8 +951,7 @@ LOB Segment wise Report Last 5 Years Comparison</button>
                 <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : "or-table-block-tr-odd"}> 
                   <td className="or-table-block-td">{row.lob}</td> 
                   <td className="or-table-block-td">{row.nop}</td><td 
-                    className="or-table-block-td">{row.gwp}</td><td 
-className="or-table-block-td">{row.si}</td><td 
+                    className="or-table-block-td">{row.gwp}</td><td className="or-table-block-td">{row.si}</td><td 
                       className="or-table-block-td">{row.gic}</td><td 
 className="or-table-block-td">{row.gep}</td><td 
                         className="or-table-block-td">{row.gicgep}</td> 
@@ -992,15 +973,34 @@ className="or-table-block-td">{row.gep}</td><td
       <div className="or-bottom-grid" style={{ fontSize: '10px' }}> 
         <div className="or-bottom-left"> 
           <div className="or-bottom-header" style={{ padding: '0.2rem 0', fontSize: '11px' }}> 
-            New Business Sourced ({">"}5 lakhs) - {getDefaultKey()} 
+            New Business Sourced ({">"}5 lakhs) - {newBusinessSourcedData.Time || getDefaultKey()} 
           </div> 
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '10px' }}> 
-            <span className="or-bottom-label" style={{ fontSize: '10px' }}>Commercial:</span> 
-            <ol className="or-bottom-list" style={{ marginBottom: '0.2rem' 
-}}>{newBusinessData.commercial.map((item, idx) => <li key={idx}>{item}</li>)}</ol> 
-            <span className="or-bottom-label" style={{ fontSize: '10px' }}>Liability:</span> 
-            <ol className="or-bottom-list" style={{ marginBottom: '0.2rem' 
-}}>{newBusinessData.liability.map((item, idx) => <li key={idx}>{item}</li>)}</ol> 
+            {Object.keys(newBusinessSourcedData).length > 0 ? ( 
+              Object.keys(newBusinessSourcedData).map(key => { 
+                if (key === 'Time') return null; // Skip time key 
+                 
+                // Handle multi-line strings from array 
+                const items = newBusinessSourcedData[key].flatMap(str => str.split(/\r?\n/)).filter(s => s.trim() 
+!== ''); 
+ 
+                return ( 
+                  <div key={key}> 
+                    <span className="or-bottom-label" style={{ fontSize: '10px' }}>{key}:</span> 
+                    {/* UPDATED: Changed from <ol> to <ul> with listStyleType: none to prevent double 
+numbering */} 
+                    <ul className="or-bottom-list" style={{ marginBottom: '0.2rem', listStyleType: 'none', 
+paddingLeft: 0 }}> 
+                      {items.map((item, idx) => ( 
+                        <li key={idx}>{item.trim()}</li> 
+                      ))} 
+                    </ul> 
+                  </div> 
+                ); 
+              }) 
+            ) : ( 
+              <p>No Data</p> 
+            )} 
           </div> 
           <div className="or-bottom-header or-bottom-header-secondary" style={{ padding: '0.2rem 0', 
 fontSize: '11px', marginTop: '0.3rem' }}> 
@@ -1014,15 +1014,6 @@ fontSize: '11px', marginTop: '0.3rem' }}>
             Initiatives - {getDefaultKey()}</div> 
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '9px', lineHeight: '1.2' }} 
             dangerouslySetInnerHTML={{ __html: newInitiativesData }}></div> 
-          <div className="or-bottom-header or-bottom-header-secondary" style={{ padding: '0.2rem 0', 
-fontSize: '11px', marginTop: '0.3rem' }}> 
-            New Business Sourced ({">"}5 lakhs) - {getDefaultKey()} 
-          </div> 
-          <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '10px' }}> 
-            <span className="or-bottom-label" style={{ fontSize: '10px' }}>SME:</span> 
-            <ol className="or-bottom-list" style={{ marginBottom: '0.2rem' 
-}}>{newBusinessData.sme.map((item, idx) => <li key={idx}>{item}</li>)}</ol> 
-          </div> 
         </div> 
       </div> 
  
@@ -1071,9 +1062,11 @@ fontSize: '11px', marginTop: '0.3rem' }}>
                 <tbody> 
                   {popupData.map((row, i) => ( 
                     <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}> 
-                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' }}>{row.segment}</td> 
+                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' 
+}}>{row.segment}</td> 
                       {[row.fire_nop, row.fire_gwp, row.fire_gicgep, row.engg_nop, row.engg_gwp, 
-                      row.engg_gicgep, row.misc_nop, row.misc_gwp, row.misc_gicgep, row.marine_nop, row.marine_gwp, 
+                      row.engg_gicgep, row.misc_nop, row.misc_gwp, row.misc_gicgep, row.marine_nop, 
+row.marine_gwp, 
                       row.marine_gicgep, row.liability_nop, row.liability_gwp, row.liability_gicgep, row.overall_nop, 
                       row.overall_gwp, row.overall_gicgep].map((val, idx) => ( 
                         <td key={idx} style={{ border: '1px solid #ccc', padding: '4px' }}>{typeof val === 'number' ? 
