@@ -1,11 +1,21 @@
-	• This work is for OverAllReview.jsx component's "New Initiatives" part.
-	• I want to fetch the data from this file "src/data/NEW_INITIATIVES.json" and displayed as shown in the image.
-	• The Time Period mentioned in the table header should be taken from the json.
-	• This is how the data is stored in the json:
-	{
-	  "Time": "December 2025",
-	  "Data": [
-	    "1. Provided Group Home CGR Rater for Manappuram Home Finance Ltd.\r\n2. Provided Shop package rater for Radhakrishna Finance Private Ltd. "
-	  ]
+
+	• This work is for Upload.jsx component's "Large risk underwritten - More than 2500 Cr" button.
+	• The uploaded Excel file should be processed and saved as as json file in "src/data/LARGE_RISK_UNDERWRITTEN.json".
+	• If the uploaded data is in this format:
+	
+	Time	Data
+	December 2025	1.  THE WEST BENGAL POWER DEVELOPMENT CORPORATION LTD - SI = 16,149 Crs -  Our Share (4%)  Premium = Rs. 30.20 L
+		2.  THE WEST BENGAL POWER DEVELOPMENT CORPORATION LTD - (SI = 7397 Crs ) - (Our Share = 7% ) Premium = Rs. 22.81 L
+		3.  M/s Gujarat Flurochemicals Limited (Dahej Complex) - (SI = 7209 Crs ) - (Our Share = 4% ) Premium = Rs. 32.75 L
+	
+	Then the processed data should be saved like this:
+	    
+	"Time":"December 2025"{
+	  "Data":{   
+	            1.  THE WEST BENGAL POWER DEVELOPMENT CORPORATION LTD - SI = 16,149 Crs -  Our Share (4%)  Premium = Rs. 30.20 L
+	            2.  THE WEST BENGAL POWER DEVELOPMENT CORPORATION LTD - (SI = 7397 Crs ) - (Our Share = 7% ) Premium = Rs. 22.81 L
+	            3.  M/s Gujarat Flurochemicals Limited (Dahej Complex) - (SI = 7209 Crs ) - (Our Share = 4% ) Premium = Rs. 32.75 L
+	       }
 	}
-  Please don't add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
+	• Please don’t add, remove or change any part of the code unnecessarily. 
+	• Implement the changes I've asked and give me the complete working code ready to paste.
