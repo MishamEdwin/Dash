@@ -1,27 +1,16 @@
-	• This work is for Upload.jsx component's New Business Sourced (>5 lakhs) button.
-	• The uploaded Excel file should be processed and saved as as json file in "src/data/NEW_BUSINESS_SOURCED.json"
-	• If the uploaded data is in this format:
-	 
-	Time	UW Sub Channel	Data
-	YTD - December 2025	Commercial	1.  KAMAL COTSPIN PRIVATE LIMITED - Textile Mills - Spinning mills  -Mumbai (Ourshare 60%)(Premium Rs.6.36 L)                         
-			2.  M/s. PREMIER COTTON TEXILES -  Electric Generation Stations - Windmill  - Coimbatore (Ourshare 25%) (Premium Rs.11.56 L)                         
-			3.  MEGHMANI LIMITED LIABILITY PARTNERSHIP - Chemical Manufacturing(Using materials with Flash Point below 32 degree C), Bulk Drug Manufacturing -  Ahmedabad (Ourshare 15%) (Premium Rs.5.36 L)                         
-			4.  PANOLI INTERMEDIATES (INDIA) PRIVATE LIMITED - Chemical Manufacturing(Using materials with Flash Point below 32 degree C), Bulk Drug Manufacturing -  Baroda (Ourshare 10%) (Premium Rs.9.15 L)     
-	YTD - December 2025	SME	1. BPR INFRASTRUCTURE PRIVATE LIMITED - Civil works - Hyderabad - 7.21L - (Ourshare 100%)     
-			2. K M V PROJECTS LTD - Building In course of construction - Hyderabad - 10.92L - (Ourshare 100%)
-			3. Sunrise silichem - Glass Manufacturing/ Automobile glass mfg. - Gujarat - 6.09L - (Ourshare 100%)
-			4. Navitas Solar Pvt Ltd - Electronic Goods Manufacturing /Assembly - Gujarat - 14.11 L - (Ourshare 20%)     
-	
-	Then the data should be saved as
-	
-	"Time":"YTD - December 2025"{
-	  "Commercial":{
-     // It's data
-	  }
-	  "SME":{
-	    // It's data
-	  }
+	• This work is for "OverAllReview.jsx" component's New Business Sourced > 5 lakhs button.
+	• First of all there are 2 of these buttons so remove the last one from the UI.
+	• I want it to fetch the data from this file "src/data/NEW_BUSINESS_SOURCED.json" and display it as shown in this image.
+	• The Time Period mentioned in the table header should be taken from the json.
+	• This is how the data is stored in the json:
+
+	{
+	  "Time": "YTD - December 2025",
+	  "Commercial": [
+	    "1.  KAMAL COTSPIN PRIVATE LIMITED - Textile Mills - Spinning mills  -Mumbai (Ourshare 60%)(Premium Rs.6.36 L)                         \r\n2.  M/s. PREMIER COTTON TEXILES -  Electric Generation Stations - Windmill  - Coimbatore (Ourshare 25%) (Premium Rs.11.56 L)                         \r\n3.  MEGHMANI LIMITED LIABILITY PARTNERSHIP - Chemical Manufacturing(Using materials with Flash Point below 32 degree C), Bulk Drug Manufacturing -  Ahmedabad (Ourshare 15%) (Premium Rs.5.36 L)                         \r\n4.  PANOLI INTERMEDIATES (INDIA) PRIVATE LIMITED - Chemical Manufacturing(Using materials with Flash Point below 32 degree C), Bulk Drug Manufacturing -  Baroda (Ourshare 10%) (Premium Rs.9.15 L)     "
+	  ],
+	  "SME": [
+	    "1. BPR INFRASTRUCTURE PRIVATE LIMITED - Civil works - Hyderabad - 7.21L - (Ourshare 100%)     \r\n2. K M V PROJECTS LTD - Building In course of construction - Hyderabad - 10.92L - (Ourshare 100%)\r\n3. Sunrise silichem - Glass Manufacturing/ Automobile glass mfg. - Gujarat - 6.09L - (Ourshare 100%)\r\n4. Navitas Solar Pvt Ltd - Electronic Goods Manufacturing /Assembly - Gujarat - 14.11 L - (Ourshare 20%)     "
+	  ]
 	}
-	
-	• Please don’t add, remove or change any part of the code unnecessarily. 
-Implement the changes I've asked and give me the complete working code ready to paste.
+   Please don't add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
