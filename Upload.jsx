@@ -13,7 +13,8 @@ const Upload = () => {
   const [dwellingsFile, setDwellingsFile] = useState(null); 
   const [brokerFile, setBrokerFile] = useState(null); 
   const [lobSegmentFile, setLobSegmentFile] = useState(null); 
-  const [fireBancaFile, setFireBancaFile] = useState(null); // New State 
+  const [fireBancaFile, setFireBancaFile] = useState(null); 
+  const [newBusinessFile, setNewBusinessFile] = useState(null); // New State 
  
   // New state for processing 
   const [processing, setProcessing] = useState(false); 
@@ -181,11 +182,10 @@ grouped[time][brokerName][subChannel][lob] = 0;
   // --- Logic: Process FIRE - Banca Channel wise UnderInsurance Report --- 
   const processFireBancaFile = (data) => { 
     const grouped = {}; 
- 
     data.forEach(row => { 
       const time = row['Time']; 
       const bankName = row['Bank Name']; 
-       
+ 
       if (!time || !bankName) return; 
  
       if (!grouped[time]) { 
@@ -215,6 +215,38 @@ grouped[time][brokerName][subChannel][lob] = 0;
  
     // Return as an array of Time objects 
     return Object.values(grouped); 
+  }; 
+ 
+  // --- Logic: Process New Business Sourced --- 
+  const processNewBusinessFile = (data) => { 
+    const result = {}; 
+    let currentChannel = ''; 
+ 
+    data.forEach(row => { 
+      // 1. Capture Time (root property) 
+      if (row['Time']) { 
+        result['Time'] = row['Time']; 
+      } 
+ 
+      // 2. Identify Channel (Handle Forward Fill if cell is empty) 
+      if (row['UW Sub Channel']) { 
+        currentChannel = row['UW Sub Channel'].toString().trim(); 
+      } 
+ 
+      if (!currentChannel) return; 
+ 
+      // 3. Initialize array for this channel 
+      if (!result[currentChannel]) { 
+        result[currentChannel] = []; 
+      } 
+ 
+      // 4. Add Data item 
+      if (row['Data']) { 
+        result[currentChannel].push(row['Data']); 
+      } 
+    }); 
+ 
+    return result; 
   }; 
  
   // --- Trigger Download of JSON --- 
@@ -299,6 +331,19 @@ grouped[time][brokerName][subChannel][lob] = 0;
       reader.readAsBinaryString(fireBancaFile); 
     } 
  
+    // 6. Process New Business Sourced 
+    if (newBusinessFile) { 
+      const reader = new FileReader(); 
+      reader.onload = (e) => { 
+        const wb = XLSX.read(e.target.result, { type: 'binary' }); 
+        const sheetName = wb.SheetNames[0]; 
+        const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]); 
+        const processedData = processNewBusinessFile(json); 
+        downloadJson(processedData, "NEW_BUSINESS_SOURCED.json"); 
+      }; 
+      reader.readAsBinaryString(newBusinessFile); 
+    } 
+ 
     setTimeout(() => { 
       setProcessing(false); 
       setActiveModal(null); 
@@ -307,6 +352,7 @@ grouped[time][brokerName][subChannel][lob] = 0;
       setBrokerFile(null); 
       setLobSegmentFile(null); 
       setFireBancaFile(null); 
+      setNewBusinessFile(null); 
       alert("Files processed! JSON files have been downloaded. Please move them to 'src/data'."); 
     }, 1000); 
   }; 
@@ -319,25 +365,30 @@ grouped[time][brokerName][subChannel][lob] = 0;
     setBrokerFile(null); 
     setLobSegmentFile(null); 
     setFireBancaFile(null); 
+    setNewBusinessFile(null); 
   }; 
  
   return ( 
     <div className="p-6 max-w-6xl mx-auto bg-white min-h-screen"> 
       {/* Header Section */} 
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b pb-6 border-gray-100"> 
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b pb-6 
+border-gray-100"> 
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2"> 
           <UploadIcon className="text-blue-600" /> Excel File Uploader 
         </h1> 
  
         <div className="flex gap-4 mt-4 md:mt-0"> 
           <div className="flex flex-col"> 
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Month</label> 
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider 
+mb-1">Month</label> 
             <select 
               value={selectedDate.month} 
               onChange={(e) => setSelectedDate({ ...selectedDate, month: e.target.value })} 
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
             > 
-              {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => ( 
+              {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 
+'November', 'December'].map(m => ( 
                 <option key={m} value={m}>{m}</option> 
               ))} 
             </select> 
@@ -348,7 +399,8 @@ mb-1">Financial Year</label>
             <select 
               value={selectedDate.year} 
               onChange={(e) => setSelectedDate({ ...selectedDate, year: e.target.value })} 
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
             > 
               <option value="2024-25">2024-25</option> 
               <option value="2025-26">2025-26</option> 
@@ -445,34 +497,41 @@ max-w-[100px]">{lobFile.name}</span>}
                   </div> 
  
                   {/* Input 2: Dwellings */} 
-                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 transition-colors"> 
+                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 
+transition-colors"> 
                     <label className="block text-sm font-bold text-gray-700 mb-2">2. Dwellings Data</label> 
                     <div className="flex items-center gap-3"> 
                       <label className="flex-1 cursor-pointer"> 
-                        <div className="flex items-center justify-center w-full px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
+                        <div className="flex items-center justify-center w-full px-4 py-2 bg-white border 
+border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
                           {dwellingsFile ? ( 
-                            <span className="flex items-center text-green-600 gap-2"><CheckCircle className="w-4 h-4" /> Selected</span> 
+                            <span className="flex items-center text-green-600 gap-2"><CheckCircle 
+className="w-4 h-4" /> Selected</span> 
                           ) : ( 
                             <span>Choose Excel File</span> 
                           )} 
                         </div> 
-                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => setDwellingsFile(e.target.files[0])} /> 
+                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => 
+setDwellingsFile(e.target.files[0])} /> 
                       </label> 
-                      {dwellingsFile && <span className="text-xs text-gray-500 truncate max-w-[100px]">{dwellingsFile.name}</span>} 
+                      {dwellingsFile && <span className="text-xs text-gray-500 truncate 
+max-w-[100px]">{dwellingsFile.name}</span>} 
                     </div> 
                   </div> 
  
                   <div className="mt-6 flex gap-3"> 
                     <button 
                       onClick={closeModal} 
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors" 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
                     > 
                       Cancel 
                     </button> 
                     <button 
                       onClick={handleUploadAndProcess} 
                       disabled={(!lobFile && !dwellingsFile) || processing} 
-                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md transition-colors ${ 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
                         (!lobFile && !dwellingsFile) || processing 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
@@ -650,6 +709,62 @@ transition-colors ${
                     </button> 
                   </div> 
                 </div> 
+              ) : activeModal === 'New Business Sourced (>5 lakhs)' ? ( 
+                /* Layout for New Business Sourced */ 
+                <div className="space-y-4"> 
+                  <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3"> 
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" /> 
+                    <p className="text-xs text-blue-800"> 
+                      Upload the New Business Sourced Excel file. The system will group data by UW Sub 
+Channel. 
+                    </p> 
+                  </div> 
+ 
+                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 
+transition-colors"> 
+                    <label className="block text-sm font-bold text-gray-700 mb-2">New Business Data 
+File</label> 
+                    <div className="flex items-center gap-3"> 
+                      <label className="flex-1 cursor-pointer"> 
+                        <div className="flex items-center justify-center w-full px-4 py-2 bg-white border 
+border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
+                          {newBusinessFile ? ( 
+                            <span className="flex items-center text-green-600 gap-2"><CheckCircle 
+className="w-4 h-4" /> Selected</span> 
+                          ) : ( 
+                            <span>Choose Excel File</span> 
+                          )} 
+                        </div> 
+                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => 
+setNewBusinessFile(e.target.files[0])} /> 
+                      </label> 
+                      {newBusinessFile && <span className="text-xs text-gray-500 truncate 
+max-w-[100px]">{newBusinessFile.name}</span>} 
+                    </div> 
+                  </div> 
+ 
+                  <div className="mt-6 flex gap-3"> 
+                    <button 
+                      onClick={closeModal} 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
+                    > 
+                      Cancel 
+                    </button> 
+                    <button 
+                      onClick={handleUploadAndProcess} 
+                      disabled={!newBusinessFile || processing} 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
+                        !newBusinessFile || processing 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
+                        }`} 
+                    > 
+                      {processing ? 'Processing...' : 'Process & Download JSON'} 
+                    </button> 
+                  </div> 
+                </div> 
               ) : ( 
                 /* Default Generic Upload UI */ 
                 <> 
@@ -674,8 +789,7 @@ border-dashed rounded-xl hover:border-blue-400 transition-colors bg-gray-50">
                           <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent 
 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"> 
                             <span>Browse files</span> 
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" 
-accept=".xlsx, .xls" /> 
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".xlsx, .xls" /> 
                           </label> 
                         </div> 
                         <p className="text-xs text-gray-500">Excel files only (max. 10MB)</p> 
@@ -686,8 +800,7 @@ accept=".xlsx, .xls" />
                   <div className="mt-8 flex gap-3"> 
                     <button 
                       onClick={closeModal} 
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
-hover:bg-gray-50 font-medium transition-colors" 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors" 
                     > 
                       Cancel 
                     </button> 
