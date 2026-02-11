@@ -23,7 +23,8 @@ const OverAllReview = ({ selectedDate }) => {
   const [brokerRawData, setBrokerRawData] = useState({}); 
   const [lobSegmentRawData, setLobSegmentRawData] = useState({}); 
   const [fireBancaRawData, setFireBancaRawData] = useState([]); 
-  const [newBusinessSourcedData, setNewBusinessSourcedData] = useState({}); // New State 
+  const [newBusinessSourcedData, setNewBusinessSourcedData] = useState({}); 
+  const [fetchedNewInitiatives, setFetchedNewInitiatives] = useState({}); // New State for Initiatives 
   const [allData, setAllData] = useState({}); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
@@ -102,6 +103,7 @@ const OverAllReview = ({ selectedDate }) => {
         const fireBancaJson = getFile('FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT') || 
 []; 
         const newBusinessJson = getFile('NEW_BUSINESS_SOURCED') || {}; 
+        const newInitiativesJson = getFile('NEW_INITIATIVES') || {}; // Load Initiatives 
         const overallJson = getFile('overall_review_data') || {}; 
  
         setLobRawData(lobJson); 
@@ -110,6 +112,7 @@ const OverAllReview = ({ selectedDate }) => {
         setLobSegmentRawData(lobSegmentJson); 
         setFireBancaRawData(fireBancaJson); 
         setNewBusinessSourcedData(newBusinessJson); 
+        setFetchedNewInitiatives(newInitiativesJson); 
         setAllData(overallJson); 
  
         // Initialize Chart Dropdown   
@@ -561,7 +564,7 @@ ytd: [] };
   const inwardYtdData = inwardFacRaw.ytd || []; 
    
   const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
-  const newInitiativesData = allData?.newInitiativesDataMap?.[currentKey] || ''; 
+  // newInitiativesData no longer derived from allData, now fetched independently 
   const popupData = allData?.popupDataMap?.[popupPeriod] || []; 
  
   if (loading) return <div className="or-loader-container"><div className="or-loader"></div></div>; 
@@ -598,9 +601,12 @@ ytd: [] };
                 <CartesianGrid strokeDasharray="3 3" /> 
                 <XAxis dataKey="lob" angle={-45} textAnchor="end" height={80} fontSize={9} interval={0} /> 
                 <YAxis yAxisId="left" orientation="left" scale="log" domain={[1, 10000000]} fontSize={9} 
-                  tickFormatter={(val) => val >= 1000000 ? `${val / 1000000}M` : val >= 1000 ? `${val / 1000}K` : val} /> 
-                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} fontSize={9} /> 
-                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : [Number(val).toLocaleString(), name]} /> 
+                  tickFormatter={(val) => val >= 1000000 ? `${val / 1000000}M` : val >= 1000 ? `${val / 
+1000}K` : val} /> 
+                <YAxis yAxisId="right" orientation="right" domain={[0, 200]} tickFormatter={(val) => `${val}%`} 
+fontSize={9} /> 
+                <Tooltip formatter={(val, name) => name === 'GIC:GEP' ? [`${val}%`, name] : 
+[Number(val).toLocaleString(), name]} /> 
                 <Legend wrapperStyle={{ fontSize: '10px' }} /> 
                 <Bar yAxisId="left" dataKey="nop" fill="#30cd05" name="NOP" /> 
                 <Bar yAxisId="left" dataKey="gwp_millions" fill="#2563eb" name="GWP (Mn)" /> 
@@ -610,7 +616,8 @@ ytd: [] };
               </ComposedChart> 
             </ResponsiveContainer> 
           </div> 
-          <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', lineHeight: '1.4' }}> 
+          <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', 
+lineHeight: '1.4' }}> 
             Fire is inclusive of Generic New NOP - 8,233 with GWP of Rs. 38 Mn. The drop in Misc. NOP and 
             GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br /> 
             *Engineering -  Commercial -  BAGMANE DEVELOPERS PRIVATE LTD - Rs. 14.88 Crs (Short 
@@ -642,8 +649,10 @@ ytd: [] };
                 {processedBrokerData.length > 0 ? ( 
                   <> 
                     {processedBrokerData.map((item, index) => ( 
-                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 'or-table-tr-others' : ''}`}> 
-                        <td className="or-table-td or-table-td-broker"><div className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div></td> 
+                      <tr key={index} className={`or-table-tr ${item.brokerName === 'Others' ? 
+'or-table-tr-others' : ''}`}> 
+                        <td className="or-table-td or-table-td-broker"><div 
+className="or-table-broker-name" title={item.brokerName}>{item.brokerName}</div></td> 
                         <td className="or-table-td">{item.channel}</td> 
                         <td className="or-table-td">{item.fire}</td> 
                         <td className="or-table-td">{item.engg}</td> 
@@ -652,8 +661,10 @@ ytd: [] };
                         <td className="or-table-td">{item.liability}</td> 
                       </tr> 
                     ))} 
-                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', fontWeight: 'bold' }}> 
-                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total GWP</td> 
+                    <tr className="or-table-tr or-table-tr-total" style={{ backgroundColor: '#fbcfe8', 
+fontWeight: 'bold' }}> 
+                      <td className="or-table-td or-table-td-broker" style={{ textAlign: 'center' }}>Total 
+GWP</td> 
                       <td className="or-table-td"></td> 
                       <td className="or-table-td">{brokerTotalRow?.fire}</td> 
                       <td className="or-table-td">{brokerTotalRow?.engg}</td> 
@@ -701,7 +712,8 @@ ytd: [] };
                 <th colSpan={3} className="or-matrix-th-lob lob-miscellaneous">MISCELLANEOUS</th> 
                 <th colSpan={3} className="or-matrix-th-lob lob-marine">MARINE</th> 
                 <th colSpan={3} className="or-matrix-th-lob lob-liability">LIABILITY</th> 
-                <th colSpan={3} className="or-matrix-th-lob lob-overall" style={{ backgroundColor: '#ff00cc', color: 'white' }}>OVERALL</th> 
+                <th colSpan={3} className="or-matrix-th-lob lob-overall" style={{ backgroundColor: 
+'#ff00cc', color: 'white' }}>OVERALL</th> 
               </tr> 
               <tr> 
                 {[...Array(6)].map((_, i) => ( 
@@ -723,14 +735,16 @@ ytd: [] };
                       <Fragment key={colKey}> 
                         <td className="or-matrix-td-nop">{cell.nop ? cell.nop.toLocaleString() : '-'}</td> 
                         <td className="or-matrix-td-gwp">{cell.gwp ? cell.gwp.toLocaleString() : '-'}</td> 
-                        <td className="or-matrix-td-gicgep" style={getGicGepStyle(cell.gicgep, colKey === 'Overall')}> 
+                        <td className="or-matrix-td-gicgep" style={getGicGepStyle(cell.gicgep, colKey === 
+'Overall')}> 
                           {cell.gicgep ? cell.gicgep + '%' : '0%'} 
                         </td> 
                       </Fragment> 
                     ); 
                   })} 
                 </tr> 
-              )) : <tr><td colSpan="19" className="or-table-td" style={{ textAlign: 'center' }}>No Data</td></tr>} 
+              )) : <tr><td colSpan="19" className="or-table-td" style={{ textAlign: 'center' }}>No 
+Data</td></tr>} 
             </tbody> 
           </table> 
           <div className="or-note or-note-red" style={{ marginTop: '10px', fontSize: '11px' }}> 
@@ -864,7 +878,8 @@ LOB Segment wise Report Last 5 Years Comparison</button>
               </thead> 
               <tbody> 
                 {cordysTatData.map((row, idx) => ( 
-                  <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : "or-table-block-tr-odd"}> 
+                  <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : 
+"or-table-block-tr-odd"}> 
                     {(idx === 0 || cordysTatData[idx - 1].month !== row.month) && <td 
                       rowSpan={cordysTatData.filter(r => r.month === row.month).length} 
                       className="or-table-block-td">{row.month}</td>} 
@@ -951,7 +966,8 @@ LOB Segment wise Report Last 5 Years Comparison</button>
                 <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : "or-table-block-tr-odd"}> 
                   <td className="or-table-block-td">{row.lob}</td> 
                   <td className="or-table-block-td">{row.nop}</td><td 
-                    className="or-table-block-td">{row.gwp}</td><td className="or-table-block-td">{row.si}</td><td 
+                    className="or-table-block-td">{row.gwp}</td><td 
+className="or-table-block-td">{row.si}</td><td 
                       className="or-table-block-td">{row.gic}</td><td 
 className="or-table-block-td">{row.gep}</td><td 
                         className="or-table-block-td">{row.gicgep}</td> 
@@ -987,8 +1003,6 @@ className="or-table-block-td">{row.gep}</td><td
                 return ( 
                   <div key={key}> 
                     <span className="or-bottom-label" style={{ fontSize: '10px' }}>{key}:</span> 
-                    {/* UPDATED: Changed from <ol> to <ul> with listStyleType: none to prevent double 
-numbering */} 
                     <ul className="or-bottom-list" style={{ marginBottom: '0.2rem', listStyleType: 'none', 
 paddingLeft: 0 }}> 
                       {items.map((item, idx) => ( 
@@ -1009,11 +1023,25 @@ fontSize: '11px', marginTop: '0.3rem' }}>
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '9px', lineHeight: '1.2' 
 }}>{largeRiskData}</div> 
         </div> 
+         
+        {/* NEW INITIATIVES SECTION - DYNAMIC */} 
         <div className="or-bottom-right"> 
-          <div className="or-bottom-header" style={{ padding: '0.2rem 0', fontSize: '11px' }}>New 
-            Initiatives - {getDefaultKey()}</div> 
-          <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '9px', lineHeight: '1.2' }} 
-            dangerouslySetInnerHTML={{ __html: newInitiativesData }}></div> 
+          <div className="or-bottom-header" style={{ padding: '0.2rem 0', fontSize: '11px' }}> 
+             New Initiatives - {fetchedNewInitiatives.Time || getDefaultKey()} 
+          </div> 
+          <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '10px' }}> 
+            {fetchedNewInitiatives.Data && fetchedNewInitiatives.Data.length > 0 ? ( 
+               <ul className="or-bottom-list" style={{ marginBottom: '0.2rem', listStyleType: 'none', 
+paddingLeft: 0 }}> 
+                 {fetchedNewInitiatives.Data.flatMap(str => str.split(/\r?\n/)).filter(s => s.trim() !== '').map((item, 
+idx) => ( 
+                   <li key={idx} style={{marginBottom: '4px'}}>{item.trim()}</li> 
+                 ))} 
+               </ul> 
+            ) : ( 
+               <p>No Data</p> 
+            )} 
+          </div> 
         </div> 
       </div> 
  
@@ -1079,9 +1107,8 @@ row.marine_gwp,
             </div> 
           </div> 
         </div> 
-      )} 
-    </div> 
-  ); 
+)} 
+</div> 
+); 
 }; 
- 
 export default OverAllReview;
