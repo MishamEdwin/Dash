@@ -5,7 +5,7 @@ import {
 } from 'recharts'; 
 import '../styles/OverAllReview.css'; 
  
-// Static configuration for Chart LOB columns   
+// Static configuration for Chart LOB columns 
 const chartLobOrder = [ 
   { key: 'FIRE (Dwellings)', label: 'FIRE (Dwellings)', colorClass: 'lob-fire' }, 
   { key: 'FIRE (Non-Dwellings)', label: 'FIRE (Non-Dwellings)', colorClass: 'lob-fire' }, 
@@ -17,35 +17,36 @@ const chartLobOrder = [
 ]; 
  
 const OverAllReview = ({ selectedDate }) => { 
-  // --- State Management ---   
+  // --- State Management --- 
   const [lobRawData, setLobRawData] = useState([]); 
   const [dwellingsRawData, setDwellingsRawData] = useState([]); 
   const [brokerRawData, setBrokerRawData] = useState({}); 
   const [lobSegmentRawData, setLobSegmentRawData] = useState({}); 
   const [fireBancaRawData, setFireBancaRawData] = useState([]); 
   const [newBusinessSourcedData, setNewBusinessSourcedData] = useState({}); 
-  const [fetchedNewInitiatives, setFetchedNewInitiatives] = useState({});  
-  const [fetchedLargeRisk, setFetchedLargeRisk] = useState({}); // New State for Large Risk 
+  const [fetchedNewInitiatives, setFetchedNewInitiatives] = useState({}); 
+  const [fetchedLargeRisk, setFetchedLargeRisk] = useState({}); 
+  const [lastFiveYearsRawData, setLastFiveYearsRawData] = useState({}); // New State 
   const [allData, setAllData] = useState({}); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
  
-  // Chart Data   
+  // Chart Data 
   const [availablePeriods, setAvailablePeriods] = useState([]); 
   const [selectedLobPeriod, setSelectedLobPeriod] = useState(''); 
   const [chartData, setChartData] = useState([]); 
  
-  // Broker Table Data   
+  // Broker Table Data 
   const [processedBrokerData, setProcessedBrokerData] = useState([]); 
   const [brokerTotalRow, setBrokerTotalRow] = useState(null); 
   const [brokerHeaderTime, setBrokerHeaderTime] = useState(''); 
  
-  // LOB & Segment Table Data   
+  // LOB & Segment Table Data 
   const [selectedMatrixPeriod, setSelectedMatrixPeriod] = useState(''); 
   const [matrixPeriods, setMatrixPeriods] = useState([]); 
   const [processedMatrixData, setProcessedMatrixData] = useState([]); 
  
-  // Growth Section Data   
+  // Growth Section Data 
   const [growthPeriods, setGrowthPeriods] = useState([]); 
   const [selectedGrowthPeriod, setSelectedGrowthPeriod] = useState(''); 
   const [growthChartData, setGrowthChartData] = useState([]); 
@@ -56,18 +57,30 @@ const OverAllReview = ({ selectedDate }) => {
   const [fireBancaTotal, setFireBancaTotal] = useState(null); 
   const [fireBancaTime, setFireBancaTime] = useState(''); 
  
-  // Growth Popup Data   
+  // Growth Popup Data 
   const [showGrowthPopup, setShowGrowthPopup] = useState(false); 
-  const [popupPeriod, setPopupPeriod] = useState("Apr'24 - Mar'25"); 
+   
+  // Popup Table 1 (YTD Data) 
+  const [popupYTDPeriods, setPopupYTDPeriods] = useState([]); 
+  const [selectedPopupYTD, setSelectedPopupYTD] = useState(''); 
+  const [popupTable1Data, setPopupTable1Data] = useState([]); 
+ 
+  // Popup Table 2 (Comparison Data) 
+  const [popupComparePeriods, setPopupComparePeriods] = useState([]); 
+  const [selectedPopupCompare, setSelectedPopupCompare] = useState(''); 
+  const [popupTable2Data, setPopupTable2Data] = useState([]); 
  
   // --- CUSTOM LABEL FUNCTION (Fixes Overflow & Centers Text) ---  
   const RADIAN = Math.PI / 180; 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => { 
+    // Check for valid value to avoid rendering 0 in a messy way if needed,  
+    // or render consistently. 
+    if (value === 0) return null; 
+ 
     // Calculate the radius to be exactly in the middle of the donut ring  
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5; 
     const x = cx + radius * Math.cos(-midAngle * RADIAN); 
     const y = cy + radius * Math.sin(-midAngle * RADIAN); 
- 
     return ( 
       <text 
         x={x} 
@@ -82,14 +95,14 @@ const OverAllReview = ({ selectedDate }) => {
     ); 
   }; 
  
-  // --- Data Fetching ---   
+  // --- Data Fetching --- 
   useEffect(() => { 
     const loadData = async () => { 
       try { 
         setLoading(true); 
         setError(null); 
  
-        // Safely load all JSON files   
+        // Safely load all JSON files 
         const modules = import.meta.glob('../data/*.json', { eager: true }); 
  
         const getFile = (name) => { 
@@ -104,8 +117,9 @@ const OverAllReview = ({ selectedDate }) => {
         const fireBancaJson = getFile('FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT') || 
 []; 
         const newBusinessJson = getFile('NEW_BUSINESS_SOURCED') || {}; 
-        const newInitiativesJson = getFile('NEW_INITIATIVES') || {};  
-        const largeRiskJson = getFile('LARGE_RISK_UNDERWRITTEN') || {}; // Load Large Risk Data 
+        const newInitiativesJson = getFile('NEW_INITIATIVES') || {}; 
+        const largeRiskJson = getFile('LARGE_RISK_UNDERWRITTEN') || {}; 
+        const lastFiveJson = getFile('LAST_FIVE_YEARS_COMPARISON') || {}; // Load Comparison Data 
         const overallJson = getFile('overall_review_data') || {}; 
  
         setLobRawData(lobJson); 
@@ -116,29 +130,50 @@ const OverAllReview = ({ selectedDate }) => {
         setNewBusinessSourcedData(newBusinessJson); 
         setFetchedNewInitiatives(newInitiativesJson); 
         setFetchedLargeRisk(largeRiskJson); 
+        setLastFiveYearsRawData(lastFiveJson); 
         setAllData(overallJson); 
  
-        // Initialize Chart Dropdown   
+        // Initialize Chart Dropdown 
         if (Array.isArray(lobJson) && lobJson.length > 0) { 
           const periods = lobJson.map(item => item.Time); 
           setAvailablePeriods(periods); 
           const match = periods.find(p => p.includes(selectedDate?.month)) || periods[0]; 
           setSelectedLobPeriod(match); 
  
-          // Initialize Growth Dropdown (YTD only)   
+          // Initialize Growth Dropdown (YTD only) 
           const ytdPeriods = periods.filter(p => p.toLowerCase().startsWith('april')); 
           setGrowthPeriods(ytdPeriods); 
           const growthMatch = ytdPeriods.find(p => p.includes(selectedDate?.month)) || 
-            ytdPeriods[0] || ''; 
+ytdPeriods[0] || ''; 
           setSelectedGrowthPeriod(growthMatch); 
         } 
  
-        // Initialize Matrix Dropdown   
+        // Initialize Matrix Dropdown 
         const mPeriods = Object.keys(lobSegmentJson); 
         setMatrixPeriods(mPeriods); 
         if (mPeriods.length > 0) { 
           const match = mPeriods.find(p => p.includes(selectedDate?.month)) || mPeriods[0]; 
           setSelectedMatrixPeriod(match); 
+        } 
+ 
+        // Initialize Popup Table 1 Dropdown (YTD from Segment Data 02) 
+        // Filter for keys containing "April" and "-" to ensure YTD range format 
+        const ytdSegPeriods = mPeriods.filter(p => p.includes('April') && p.includes('-')); 
+        setPopupYTDPeriods(ytdSegPeriods); 
+        if(ytdSegPeriods.length > 0) { 
+            // Default to most recent (assuming order or logic, simply taking first valid or matching month) 
+            const match = ytdSegPeriods.find(p => p.includes(selectedDate?.month)) || 
+ytdSegPeriods[0]; 
+            setSelectedPopupYTD(match); 
+        } 
+ 
+        // Initialize Popup Table 2 Dropdown (Comparison Data) 
+        const comparePeriods = Object.keys(lastFiveJson); 
+        setPopupComparePeriods(comparePeriods); 
+        if(comparePeriods.length > 0) { 
+            const match = comparePeriods.find(p => p.includes(selectedDate?.month)) || 
+comparePeriods[0]; 
+            setSelectedPopupCompare(match); 
         } 
  
       } catch (err) { 
@@ -152,7 +187,96 @@ const OverAllReview = ({ selectedDate }) => {
     loadData(); 
   }, [selectedDate]); 
  
-  // --- Chart Data Processing ---   
+  // --- POPUP TABLE 1 LOGIC (YTD from Segment Data 02) --- 
+  useEffect(() => { 
+    if (!selectedPopupYTD || !lobSegmentRawData[selectedPopupYTD]) { 
+        setPopupTable1Data([]); 
+        return; 
+    } 
+ 
+    const data = lobSegmentRawData[selectedPopupYTD]; // Structure: { Segment: { LOB: Data } } 
+    const segments = Object.keys(data); 
+    // Explicit LOBs matching requirements 
+    const lobs = ['Fire', 'Engineering', 'Miscellaneous', 'Marine', 'Liability']; 
+ 
+    const rows = segments.map(segment => { 
+        const rowData = { segment }; 
+        let rowNop = 0, rowPrem = 0, rowEarned = 0, rowClaims = 0; 
+ 
+        lobs.forEach(lob => { 
+            // Normalize key casing if necessary, but JSON seems to have Title Case 
+            const cellData = data[segment][lob] || {}; 
+            const nop = cellData["Total NOP"] || 0; 
+            const prem = cellData["Total Prem"] || 0; 
+            const earned = cellData["Total Earned Prem"] || 0; 
+            const claims = cellData["Total Claim incurred in Period"] || 0; 
+ 
+            rowData[lob] = { 
+                nop: nop, 
+                gwp: Math.round(prem / 1000000), 
+                gicgep: earned !== 0 ? Math.round((claims / earned) * 100) : 0 
+            }; 
+ 
+            rowNop += nop; rowPrem += prem; rowEarned += earned; rowClaims += claims; 
+        }); 
+ 
+        // Overall Column for this Segment 
+        rowData['Overall'] = { 
+            nop: rowNop, 
+            gwp: Math.round(rowPrem / 1000000), 
+            gicgep: rowEarned !== 0 ? Math.round((rowClaims / rowEarned) * 100) : 0 
+        }; 
+        return rowData; 
+    }); 
+ 
+    // Calculate TOTAL Row for Table 1 
+    if (rows.length > 0) { 
+        const totalRow = { segment: 'TOTAL', isTotal: true }; 
+        [...lobs, 'Overall'].forEach(col => { 
+            let colNop = 0, rawPremSum = 0, rawEarnedSum = 0, rawClaimsSum = 0; 
+             
+            if(col === 'Overall') { 
+                Object.values(data).forEach(segData => { 
+                    Object.values(segData).forEach(lData => { 
+                        colNop += lData["Total NOP"] || 0; 
+                        rawPremSum += lData["Total Prem"] || 0; 
+                        rawEarnedSum += lData["Total Earned Prem"] || 0; 
+                        rawClaimsSum += lData["Total Claim incurred in Period"] || 0; 
+                    }); 
+                }); 
+            } else { 
+                Object.values(data).forEach(segData => { 
+                    const lData = segData[col] || {}; 
+                    colNop += lData["Total NOP"] || 0; 
+                    rawPremSum += lData["Total Prem"] || 0; 
+                    rawEarnedSum += lData["Total Earned Prem"] || 0; 
+                    rawClaimsSum += lData["Total Claim incurred in Period"] || 0; 
+                }); 
+            } 
+ 
+            totalRow[col] = { 
+                nop: colNop, 
+                gwp: Math.round(rawPremSum / 1000000), 
+                gicgep: rawEarnedSum !== 0 ? Math.round((rawClaimsSum / rawEarnedSum) * 100) : 0 
+            }; 
+        }); 
+        rows.push(totalRow); 
+    } 
+    setPopupTable1Data(rows); 
+ 
+  }, [selectedPopupYTD, lobSegmentRawData]); 
+ 
+  // --- POPUP TABLE 2 LOGIC (Comparision Data) --- 
+  useEffect(() => { 
+    if (!selectedPopupCompare || !lastFiveYearsRawData[selectedPopupCompare]) { 
+        setPopupTable2Data([]); 
+        return; 
+    } 
+    const data = lastFiveYearsRawData[selectedPopupCompare]; // Array of objects 
+    setPopupTable2Data(data); 
+  }, [selectedPopupCompare, lastFiveYearsRawData]); 
+ 
+  // --- Chart Data Processing --- 
   useEffect(() => { 
     if (!selectedLobPeriod || !lobRawData || lobRawData.length === 0) return; 
  
@@ -166,7 +290,7 @@ selectedLobPeriod) || {};
     const processedChartData = []; 
     let totalNop = 0, totalPrem = 0, totalEarned = 0, totalClaims = 0; 
  
-    // Fire Split   
+    // Fire Split 
     const fireDwelling = { 
       label: 'FIRE (Dwellings)', 
       nop: getNum(dwellingPeriodData["Total Net Pol"]), 
@@ -232,13 +356,13 @@ item.claims;
     setChartData(processedChartData); 
   }, [selectedLobPeriod, lobRawData, dwellingsRawData]); 
  
-  // --- Broker Table Logic ---   
+  // --- Broker Table Logic --- 
   useEffect(() => { 
     let timeKey = Object.keys(brokerRawData).find(t => t === selectedLobPeriod); 
     if (!timeKey && Object.keys(brokerRawData).length > 0) { 
       const month = selectedDate?.month; 
       timeKey = Object.keys(brokerRawData).find(t => t.includes(month)) || 
-Object.keys(brokerRawData)[0]; 
+        Object.keys(brokerRawData)[0]; 
     } 
  
     if (!timeKey || !brokerRawData[timeKey]) { 
@@ -263,6 +387,7 @@ Object.keys(brokerRawData)[0];
         liability += lobData['Liability'] || 0; 
         grandTotal += lobData['Grand Total'] || 0; 
       }); 
+ 
       return { brokerName, channel: channelName, fire, engg, marine, misc, liability, grandTotal }; 
     }); 
  
@@ -293,6 +418,7 @@ item.grandTotal;
       ...r, fire: fmt(r.fire), engg: fmt(r.engg), marine: fmt(r.marine), misc: fmt(r.misc), liability: 
 fmt(r.liability) 
     })); 
+ 
     const formattedTotal = { 
       fire: fmt(totalRow.fire), engg: fmt(totalRow.engg), marine: fmt(totalRow.marine), misc: 
 fmt(totalRow.misc), liability: fmt(totalRow.liability) 
@@ -302,7 +428,7 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     setBrokerTotalRow(formattedTotal); 
   }, [brokerRawData, selectedLobPeriod, selectedDate]); 
  
-  // --- LOB & Segment Table Logic ---   
+  // --- LOB & Segment Table Logic (Main Dashboard) --- 
   useEffect(() => { 
     if (!selectedMatrixPeriod || !lobSegmentRawData[selectedMatrixPeriod]) { 
       setProcessedMatrixData([]); 
@@ -331,8 +457,7 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
           gicgep: earned !== 0 ? Math.round((claims / earned) * 100) : 0 
         }; 
  
-        rowNop += nop; 
-        rowPrem += prem; rowEarned += earned; rowClaims += claims; 
+        rowNop += nop; rowPrem += prem; rowEarned += earned; rowClaims += claims; 
       }); 
  
       rowData['Overall'] = { 
@@ -347,10 +472,7 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     if (rows.length > 0) { 
       const totalRow = { segment: 'Grand Total', isTotal: true }; 
       [...lobs, 'Overall'].forEach(col => { 
-        let colNop = 0; 
-        let rawPremSum = 0; 
-        let rawEarnedSum = 0; 
-        let rawClaimsSum = 0; 
+        let colNop = 0, rawPremSum = 0, rawEarnedSum = 0, rawClaimsSum = 0; 
  
         if (col === 'Overall') { 
           Object.values(data).forEach(segData => { 
@@ -383,17 +505,17 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     setProcessedMatrixData(rows); 
   }, [selectedMatrixPeriod, lobSegmentRawData]); 
  
-  // --- Growth Section Logic ---   
+  // --- Growth Section Logic --- 
   useEffect(() => { 
     if (!selectedGrowthPeriod || !lobRawData.length) return; 
  
-    // 1. Identify Current and Previous Periods   
+    // 1. Identify Current and Previous Periods 
     const currentPeriod = selectedGrowthPeriod; 
     const prevPeriod = currentPeriod.replace(/(\d{4})-(\d{2})/g, (match, p1, p2) => { 
       return `${parseInt(p1) - 1}-${parseInt(p2) - 1}`; 
     }); 
  
-    // Extract FY String for Legend (e.g. "2025-26" -> "FY '25-26")   
+    // Extract FY String for Legend 
     const extractFY = (periodStr) => { 
       const match = periodStr.match(/(\d{4}-\d{2})/); 
       return match ? `FY '${match[1].substring(2)}` : ''; 
@@ -403,19 +525,19 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
       previous: extractFY(prevPeriod) || "Previous" 
     }); 
  
-    // 2. Fetch Data   
+    // 2. Fetch Data 
     const currentData = lobRawData.find(d => d.Time === currentPeriod); 
     const prevData = lobRawData.find(d => d.Time === prevPeriod); 
  
     if (!currentData) return; 
  
     const categories = [ 
-      { key: 'FIRE', label: 'FIRE', colors: ['#f97316', '#fdba74'] }, // Dark Orange, Light Orange   
-      { key: 'ENGINEERING', label: 'ENGINEERING', colors: ['#22c55e', '#86efac'] }, // Dark Green, Light Green   
-      { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colors: ['#ffff00', '#fef08a'] }, // Yellows   
-      { key: 'MARINE', label: 'MARINE', colors: ['#1d4ed8', '#93c5fd'] }, // Dark Blue, Light Blue   
-      { key: 'LIABILITY', label: 'LIABILITY', colors: ['#06b6d4', '#67e8f9'] }, // Cyan   
-      { key: 'Total', label: 'OVERALL', colors: ['#f43f5e', '#fda4af'] } // Pink   
+      { key: 'FIRE', label: 'FIRE', colors: ['#f97316', '#fdba74'] }, 
+      { key: 'ENGINEERING', label: 'ENGINEERING', colors: ['#22c55e', '#86efac'] }, 
+      { key: 'MISCELLANEOUS', label: 'MISCELLANEOUS', colors: ['#ffff00', '#fef08a'] }, 
+      { key: 'MARINE', label: 'MARINE', colors: ['#1d4ed8', '#93c5fd'] }, 
+      { key: 'LIABILITY', label: 'LIABILITY', colors: ['#06b6d4', '#67e8f9'] }, 
+      { key: 'Total', label: 'OVERALL', colors: ['#f43f5e', '#fda4af'] } 
     ]; 
  
     const growthResult = categories.map(cat => { 
@@ -450,9 +572,10 @@ fmt(totalRow.misc), liability: fmt(totalRow.liability)
     }); 
  
     setGrowthChartData(growthResult); 
+ 
   }, [selectedGrowthPeriod, lobRawData]); 
  
-  // --- FIRE BANCA REPORT LOGIC (Updated to ROUND OFF values) --- 
+  // --- FIRE BANCA REPORT LOGIC --- 
   useEffect(() => { 
     let foundData = null; 
     if (fireBancaRawData.length > 0) { 
@@ -546,9 +669,9 @@ totalClaimsRounded) * 100) : 0;
   }, [fireBancaRawData, selectedDate]); 
  
  
-  // --- Helpers ---   
+  // --- Helpers --- 
   const getDefaultKey = () => selectedDate?.month === 'July' ? 'YTD July 2025' : 
-    selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
+selectedDate?.month === 'June' ? 'YTD June 2025' : 'YTD May 2025'; 
   const getMonthName = () => selectedDate?.month || 'May'; 
  
   const getGicGepStyle = (val, isOverall) => { 
@@ -556,19 +679,23 @@ totalClaimsRounded) * 100) : 0;
     return val > 90 ? { color: 'red' } : {}; 
   }; 
  
-  // --- Derived Data for OTHER Tables ---   
+  // --- Derived Data for OTHER Tables --- 
   const currentKey = getDefaultKey(); 
   const cordysTatData = allData?.cordysTatDataMap?.[currentKey] || []; 
+  const fireUnderData = allData?.fireUnderInsuranceDataMap?.[currentKey] || []; 
  
   const inwardMonthKey = selectedDate?.month?.toLowerCase() || 'may'; 
   const inwardFacRaw = allData?.inwardFacDataMap?.[currentKey] || { [inwardMonthKey]: [], 
 ytd: [] }; 
   const inwardMonthData = inwardFacRaw[inwardMonthKey] || []; 
   const inwardYtdData = inwardFacRaw.ytd || []; 
-   
-  // No longer use static largeRiskData derived from allData 
+ 
+  const newBusinessData = allData?.newBusinessDataMap?.[currentKey] || { commercial: [], 
+liability: [], sme: [] }; 
+  const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
   const newInitiativesData = allData?.newInitiativesDataMap?.[currentKey] || ''; 
   const popupData = allData?.popupDataMap?.[popupPeriod] || []; 
+  const staticGrowth = allData?.staticGrowthDataMap?.[currentKey] || []; 
  
   if (loading) return <div className="or-loader-container"><div className="or-loader"></div></div>; 
   if (error) return <div className="or-error-container"><h3>{error}</h3></div>; 
@@ -615,16 +742,16 @@ fontSize={9} />
                 <Bar yAxisId="left" dataKey="gwp_millions" fill="#2563eb" name="GWP (Mn)" /> 
                 <Line yAxisId="right" type="monotone" dataKey="gic_gep" stroke="#e30613" strokeWidth={2} 
                   dot={{ r: 3 }} name="GIC:GEP" label={({ x, y, value }) => (<text x={x} y={y - 10} fill="#e30613" 
-                    fontSize={10} textAnchor="middle" fontWeight="bold">{value}%</text>)} /> 
+fontSize={10} textAnchor="middle" fontWeight="bold">{value}%</text>)} /> 
               </ComposedChart> 
             </ResponsiveContainer> 
           </div> 
           <div className="or-note-chart or-note-red" style={{ marginTop: '10px', fontSize: '12px', 
 lineHeight: '1.4' }}> 
             Fire is inclusive of Generic New NOP - 8,233 with GWP of Rs. 38 Mn. The drop in Misc. NOP and 
-            GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br /> 
+GWP is due to Burglary policies being issued under EPP Tiny (Fire).<br /> 
             *Engineering -  Commercial -  BAGMANE DEVELOPERS PRIVATE LTD - Rs. 14.88 Crs (Short 
-            Circuit Fire) 
+Circuit Fire) 
           </div> 
         </div> 
  
@@ -679,7 +806,6 @@ GWP</td>
                 ) : <tr><td colSpan="7" className="or-table-td">No data available</td></tr>} 
               </tbody> 
             </table> 
- 
           </div> 
         </div> 
       </div> 
@@ -719,6 +845,7 @@ GWP</td>
 '#ff00cc', color: 'white' }}>OVERALL</th> 
               </tr> 
               <tr> 
+                {/* 6 sets of subheaders (5 LOBs + 1 Overall) */} 
                 {[...Array(6)].map((_, i) => ( 
                   <Fragment key={i}> 
                     <th className="or-matrix-th-sub">NOP</th> 
@@ -790,8 +917,8 @@ marginLeft: '10px', color: '#000', backgroundColor: '#fff' }}
                   <PieChart> 
                     <Pie 
                       data={[ 
-                        { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, // Dynamic Values  
-                        { name: "Previous", value: lob.prevGWP, color: lob.colors[1] },   // Dynamic Values  
+                        { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, // Dynamic Values   
+                        { name: "Previous", value: lob.prevGWP, color: lob.colors[1] },   // Dynamic Values   
                       ]} 
                       dataKey="value" 
                       nameKey="name" 
@@ -803,18 +930,20 @@ marginLeft: '10px', color: '#000', backgroundColor: '#fff' }}
                       endAngle={-270} 
                       stroke="white" 
                       strokeWidth={2} 
-                      labelLine={false} // Removes the leader line  
-                      label={renderCustomizedLabel} // Centers text inside the curve  
+                      labelLine={false} // Removes the leader line   
+                      label={renderCustomizedLabel} // Centers text inside the curve   
                     > 
                       { 
                         [ 
                           { name: "Current", value: lob.currentGWP, color: lob.colors[0] }, 
                           { name: "Previous", value: lob.prevGWP, color: lob.colors[1] } 
                         ].map((entry, index) => ( 
+ 
                           <Cell key={`cell-${index}`} fill={entry.color} /> 
                         )) 
                       } 
                     </Pie> 
+ 
                   </PieChart> 
                 </ResponsiveContainer> 
                 {/* Center Value: Growth % */} 
@@ -824,10 +953,10 @@ marginLeft: '10px', color: '#000', backgroundColor: '#fff' }}
                     {lob.growth}% 
                   </div> 
                 </div> 
- 
               </div> 
             </div> 
           ))} 
+ 
         </div> 
         {/* Growth Legend */} 
         {growthChartData.length > 0 && ( 
@@ -835,6 +964,7 @@ marginLeft: '10px', color: '#000', backgroundColor: '#fff' }}
             {growthChartData.map(lob => ( 
               <div key={lob.key} className="or-growth-legend-item"> 
                 <div style={{ display: 'flex', alignItems: 'center' }}> 
+ 
                   <div className="or-growth-legend-color" style={{ background: lob.colors[0] }}></div> 
                   <span className="or-growth-legend-label">{lob.label} {growthFYLabels.current} 
 GWP</span> 
@@ -850,10 +980,14 @@ GWP</span>
         )} 
  
         <div style={{ textAlign: 'center', marginTop: '15px' }}> 
-          <button onClick={() => setShowGrowthPopup(true)} className="or-growth-btn">
-📊
- Click Here - 
-LOB Segment wise Report Last 5 Years Comparison</button> 
+          <button  
+            onClick={() => setShowGrowthPopup(true)}  
+            className="or-growth-btn" 
+            style={{ backgroundColor: '#ff0066', color:'#ffffffff', padding:'20px', borderRadius:"35px"}} 
+          > 
+            
+ 📊 LOB & Segment wise report Last 5 Years Comparison 
+          </button> 
         </div> 
       </div> 
  
@@ -881,8 +1015,8 @@ LOB Segment wise Report Last 5 Years Comparison</button>
               </thead> 
               <tbody> 
                 {cordysTatData.map((row, idx) => ( 
-                  <tr key={idx} className={idx % 2 === 0 ? "or-table-block-tr-even" : 
-"or-table-block-tr-odd"}> 
+                  <tr key={idx} 
+                    className={idx % 2 === 0 ? "or-table-block-tr-even" : "or-table-block-tr-odd"}> 
                     {(idx === 0 || cordysTatData[idx - 1].month !== row.month) && <td 
                       rowSpan={cordysTatData.filter(r => r.month === row.month).length} 
                       className="or-table-block-td">{row.month}</td>} 
@@ -970,10 +1104,10 @@ LOB Segment wise Report Last 5 Years Comparison</button>
                   <td className="or-table-block-td">{row.lob}</td> 
                   <td className="or-table-block-td">{row.nop}</td><td 
                     className="or-table-block-td">{row.gwp}</td><td 
-className="or-table-block-td">{row.si}</td><td 
-                      className="or-table-block-td">{row.gic}</td><td 
-className="or-table-block-td">{row.gep}</td><td 
-                        className="or-table-block-td">{row.gicgep}</td> 
+                      className="or-table-block-td">{row.si}</td><td 
+                        className="or-table-block-td">{row.gic}</td><td 
+                          className="or-table-block-td">{row.gep}</td><td 
+                            className="or-table-block-td">{row.gicgep}</td> 
                   {inwardYtdData[idx] ? ( 
                     <><td className="or-table-block-td">{inwardYtdData[idx].nop}</td><td 
                       className="or-table-block-td">{inwardYtdData[idx].gwp}</td><td 
@@ -997,12 +1131,9 @@ className="or-table-block-td">{row.gep}</td><td
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '10px' }}> 
             {Object.keys(newBusinessSourcedData).length > 0 ? ( 
               Object.keys(newBusinessSourcedData).map(key => { 
-                if (key === 'Time') return null; // Skip time key 
-                 
-                // Handle multi-line strings from array 
+                if (key === 'Time') return null; 
                 const items = newBusinessSourcedData[key].flatMap(str => str.split(/\r?\n/)).filter(s => s.trim() 
 !== ''); 
- 
                 return ( 
                   <div key={key}> 
                     <span className="or-bottom-label" style={{ fontSize: '10px' }}>{key}:</span> 
@@ -1019,8 +1150,6 @@ paddingLeft: 0 }}>
               <p>No Data</p> 
             )} 
           </div> 
-           
-          {/* LARGE RISK UNDERWRITTEN SECTION - DYNAMIC */} 
           <div className="or-bottom-header or-bottom-header-secondary" style={{ padding: '0.2rem 0', 
 fontSize: '11px', marginTop: '0.3rem' }}> 
             Large risk underwritten - More than 2500 Cr - {fetchedLargeRisk.Time || getDefaultKey()} 
@@ -1032,15 +1161,13 @@ fontSize: '11px', marginTop: '0.3rem' }}>
 paddingLeft: 0 }}> 
                  {fetchedLargeRisk.Data.flatMap(str => str.split(/\r?\n/)).filter(s => s.trim() !== '').map((item, idx) => ( 
                    <li key={idx} style={{marginBottom: '4px'}}>{item.trim()}</li> 
-                 ))} 
+                 ))}  
                </ul> 
             ) : ( 
                <p>No Data</p> 
             )} 
           </div> 
         </div> 
-         
-        {/* NEW INITIATIVES SECTION - DYNAMIC */} 
         <div className="or-bottom-right"> 
           <div className="or-bottom-header" style={{ padding: '0.2rem 0', fontSize: '11px' }}> 
              New Initiatives - {fetchedNewInitiatives.Time || getDefaultKey()} 
@@ -1050,9 +1177,9 @@ paddingLeft: 0 }}>
                <ul className="or-bottom-list" style={{ marginBottom: '0.2rem', listStyleType: 'none', 
 paddingLeft: 0 }}> 
                  {fetchedNewInitiatives.Data.flatMap(str => str.split(/\r?\n/)).filter(s => s.trim() !== '').map((item, 
-idx) => ( 
-                   <li key={idx} style={{marginBottom: '4px'}}>{item.trim()}</li> 
-                 ))} 
+idx) => (  
+                   <li key={idx} style={{marginBottom: '4px'}}>{item.trim()}</li>  
+                 ))}  
                </ul> 
             ) : ( 
                <p>No Data</p> 
@@ -1062,70 +1189,108 @@ idx) => (
       </div> 
  
       {showGrowthPopup && ( 
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', 
-          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 
-        }}> 
-          <div style={{ 
-            backgroundColor: 'white', padding: '20px', borderRadius: '8px', maxWidth: '95vw', 
-            maxHeight: '90vh', overflow: 'auto', position: 'relative' 
-          }}> 
-            <button onClick={() => setShowGrowthPopup(false)} style={{ 
-              position: 'absolute', top: '10px', 
-              right: '15px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' 
-            }}>×</button> 
-            <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>LOB wise Growth % (GWP)</h2> 
-            <div style={{ marginBottom: '30px' }}> 
-              <h3 style={{ 
-                backgroundColor: '#ff6600', color: 'white', padding: '8px', margin: '0 0 10px 0', 
-                textAlign: 'center' 
-              }}> 
-                {selectedDate?.month === 'July' ? "Apr'25 - July'25" : selectedDate?.month === 'June' ? 
-                  "Apr'25 - June'25" : "Apr'25 - May'25"} 
-              </h3> 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}> 
-                <thead> 
-                  <tr style={{ backgroundColor: '#f0f0f0' }}> 
-                    <th rowSpan={2} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ffb3b3' 
-}}>Segment</th> 
-                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ff9900' 
-}}>FIRE</th> 
-                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: 
-'#00cc00' }}>ENGINEERING</th> 
-                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ffff00' 
-}}>MISCELLANEOUS</th> 
-                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: 
-'#0066cc' }}>Marine</th> 
-                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: 
-'#00cccc' }}>LIABILITY</th> 
-                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ff00cc' 
-}}>OVERALL</th> 
-                  </tr> 
-                  <tr>{Array(6).fill(['NOP', 'GWP', 'GIC:GEP']).flat().map((h, i) => <th key={i} style={{ border: '1px solid #ccc', padding: '4px', fontSize: '10px' }}>{h}</th>)}</tr> 
-                </thead> 
-                <tbody> 
-                  {popupData.map((row, i) => ( 
-                    <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}> 
-                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' 
-}}>{row.segment}</td> 
-                      {[row.fire_nop, row.fire_gwp, row.fire_gicgep, row.engg_nop, row.engg_gwp, 
-                      row.engg_gicgep, row.misc_nop, row.misc_gwp, row.misc_gicgep, row.marine_nop, 
-row.marine_gwp, 
-                      row.marine_gicgep, row.liability_nop, row.liability_gwp, row.liability_gicgep, row.overall_nop, 
-                      row.overall_gwp, row.overall_gicgep].map((val, idx) => ( 
-                        <td key={idx} style={{ border: '1px solid #ccc', padding: '4px' }}>{typeof val === 'number' ? 
-                          val.toLocaleString() : val}</td> 
-                      ))} 
-                    </tr> 
-                  ))} 
-                </tbody> 
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', 
+display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}> 
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', maxWidth: '95vw', 
+maxHeight: '90vh', overflow: 'auto', position: 'relative' }}> 
+            <button onClick={() => setShowGrowthPopup(false)} style={{ position: 'absolute', top: '10px', 
+right: '15px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' 
+}}>×</button> 
+            <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>LOB & SEGMENT WISE REPORT LAST 5 YEARS COMPARISON</h2> 
+             
+            {/* TABLE 1: LOB & Segment Wise Report (YTD Data) */} 
+            <div style={{ marginBottom: '30px' }}>  
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ff6600', padding: '8px', marginBottom: '0' }}> 
+                 <h3 style={{ color: 'white', margin: '0', textAlign: 'center', flex: 1, fontSize: '14px' }}>LOB & Segment wise Report - Current Financial Year</h3> 
+                 <select  
+                    value={selectedPopupYTD}  
+                    onChange={(e) => setSelectedPopupYTD(e.target.value)}  
+                    style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', color: 'black' }} 
+                 >  
+                    {popupYTDPeriods.length > 0 ? popupYTDPeriods.map(p => <option key={p} value={p}>{p}</option>) : <option>No YTD Data</option>}  
+                 </select>  
+              </div> 
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>  
+                <thead>  
+                  <tr>  
+                    <th rowSpan={2} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ffb3b3' }}>Segment</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ff9900' }}>FIRE</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#00cc00' }}>ENGINEERING</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ffff00' }}>MISCELLANEOUS</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#0066cc' }}>Marine</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#00cccc' }}>LIABILITY</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ff00cc' }}>OVERALL</th>  
+                  </tr>  
+                  <tr>{Array(6).fill(['NOP', 'GWP', 'GIC:GEP']).flat().map((h, i) => <th key={i} style={{ border: '1px solid #ccc', backgroundColor:'#d695ffed', padding: '8px', fontSize: '10px' }}>{h}</th>)}</tr>  
+                </thead>  
+                <tbody>  
+                  {popupTable1Data.map((row, i) => (  
+                    <tr key={i} style={row.isTotal ? { backgroundColor: '#fbcfe8', fontWeight: 'bold' } : { backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}>  
+                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' }}>{row.segment}</td>  
+                      {['Fire', 'Engineering', 'Miscellaneous', 'Marine', 'Liability', 'Overall'].map((colKey) => {  
+                         const cell = row[colKey] || { nop: 0, gwp: 0, gicgep: 0 }; 
+                         return ( 
+                            <Fragment key={colKey}> 
+                               <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>{cell.nop.toLocaleString()}</td> 
+                               <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>{cell.gwp}</td> 
+                               <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>{cell.gicgep}%</td> 
+                            </Fragment> 
+                         ) 
+                      })}  
+                    </tr>  
+                  ))}  
+                </tbody>  
               </table> 
-            </div> 
-          </div> 
-        </div> 
-      )} 
-    </div> 
-  ); 
-}; 
+            </div>  
  
-export default OverAllReview; 
+            {/* TABLE 2: Last Five Year Comparison */} 
+            <div>  
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ff6600', padding: '8px', marginBottom: '0' }}> 
+                 <h3 style={{ color: 'white', margin: '0', textAlign: 'center', flex: 1, fontSize: '14px' }}>LOB & Segment wise Report - Previous Financial Years</h3> 
+                 <select  
+                    value={selectedPopupCompare}  
+                    onChange={(e) => setSelectedPopupCompare(e.target.value)}  
+                    style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', color: 'black' }} 
+                 >  
+                    {popupComparePeriods.length > 0 ? popupComparePeriods.map(p => <option key={p} value={p}>{p}</option>) : <option>No Data</option>}  
+                 </select>  
+              </div> 
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>  
+                <thead>  
+                  <tr>  
+                    <th rowSpan={2} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ffb3b3' }}>Segment</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ff9900' }}>FIRE</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#00cc00' }}>ENGINEERING</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ffff00' }}>MISCELLANEOUS</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#0066cc' }}>Marine</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#00cccc' }}>LIABILITY</th>  
+                    <th colSpan={3} style={{ border: '1px solid #ccc', padding: '8px', backgroundColor: '#ff00cc' }}>OVERALL</th>  
+                  </tr>  
+                  <tr>{Array(6).fill(['NOP', 'GWP', 'GIC:GEP']).flat().map((h, i) => <th key={i} style={{ border: '1px solid #ccc',backgroundColor:'#d695ffed', padding: '8px', fontSize: '10px' }}>{h}</th>)}</tr>  
+                </thead>  
+                <tbody>  
+                  {popupTable2Data.map((row, i) => (  
+                    <tr key={i} style={row.isTotal ? { backgroundColor: '#fbcfe8', fontWeight: 'bold' } : { backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}>  
+                      <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' }}>{row.Segment}</td>  
+                      {['FIRE', 'ENGINEERING', 'MISCELLANEOUS', 'Marine', 'Liability', 'Overall'].map(colKey => { 
+                          const cell = row[colKey] || { NOP: 0, GWP: 0, 'GIC:GEP': 0 }; 
+                          return ( 
+                             <Fragment key={colKey}> 
+                                <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>{cell.NOP ? cell.NOP.toLocaleString() : 0}</td> 
+                                <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>{cell.GWP ? Math.round(cell.GWP) : 0}</td> 
+                                <td style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>{cell['GIC:GEP'] ? Math.round(cell['GIC:GEP']*100) : 0}%</td> 
+                             </Fragment> 
+                          ) 
+                      })} 
+                    </tr>  
+                  ))}  
+                </tbody>  
+              </table>  
+            </div>  
+          </div>  
+        </div>  
+)}  
+</div>  
+); 
+};  
+export default OverAllReview;
