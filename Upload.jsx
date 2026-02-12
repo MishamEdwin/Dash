@@ -15,7 +15,8 @@ const Upload = () => {
   const [lobSegmentFile, setLobSegmentFile] = useState(null); 
   const [fireBancaFile, setFireBancaFile] = useState(null); 
   const [newBusinessFile, setNewBusinessFile] = useState(null); 
-  const [newInitiativesFile, setNewInitiativesFile] = useState(null); // New State 
+  const [newInitiativesFile, setNewInitiativesFile] = useState(null); 
+  const [largeRiskFile, setLargeRiskFile] = useState(null); // New State 
  
   // New state for processing 
   const [processing, setProcessing] = useState(false); 
@@ -102,7 +103,8 @@ const Upload = () => {
  
       if (!grouped[time]) grouped[time] = {}; 
       if (!grouped[time][brokerName]) grouped[time][brokerName] = {}; 
-      if (!grouped[time][brokerName][subChannel]) grouped[time][brokerName][subChannel] = { "Grand Total": 0 }; 
+      if (!grouped[time][brokerName][subChannel]) grouped[time][brokerName][subChannel] = 
+{ "Grand Total": 0 }; 
       if (!grouped[time][brokerName][subChannel][lob]) 
 grouped[time][brokerName][subChannel][lob] = 0; 
  
@@ -138,7 +140,8 @@ grouped[time][brokerName][subChannel][lob] = 0;
       grouped[time][subChannel][lob]["Total NOP"] += parseExcelNumber(row['Net Pol']); 
       grouped[time][subChannel][lob]["Total Prem"] += parseExcelNumber(row['Prem']); 
       grouped[time][subChannel][lob]["Total Earned Prem"] += parseExcelNumber(row['Earned Prem']); 
-      grouped[time][subChannel][lob]["Total Claim incurred in Period"] += parseExcelNumber(row['Claim incurred in period']); 
+      grouped[time][subChannel][lob]["Total Claim incurred in Period"] += 
+parseExcelNumber(row['Claim incurred in period']); 
     }); 
  
     return grouped; 
@@ -258,12 +261,28 @@ grouped[time][brokerName][subChannel][lob] = 0;
     }; 
  
     data.forEach(row => { 
-      // 1. Capture Time from the first row that has it 
       if (row['Time'] && !result["Time"]) { 
         result["Time"] = row['Time']; 
       } 
+      if (row['Data']) { 
+        result["Data"].push(row['Data']); 
+      } 
+    }); 
  
-      // 2. Add Data item to array 
+    return result; 
+  }; 
+ 
+  // --- Logic: Process Large Risk Underwritten --- 
+  const processLargeRiskFile = (data) => { 
+    const result = { 
+      "Time": "", 
+      "Data": [] 
+    }; 
+ 
+    data.forEach(row => { 
+      if (row['Time'] && !result["Time"]) { 
+        result["Time"] = row['Time']; 
+      } 
       if (row['Data']) { 
         result["Data"].push(row['Data']); 
       } 
@@ -380,6 +399,19 @@ grouped[time][brokerName][subChannel][lob] = 0;
       reader.readAsBinaryString(newInitiativesFile); 
     } 
  
+    // 8. Process Large Risk Underwritten 
+    if (largeRiskFile) { 
+      const reader = new FileReader(); 
+      reader.onload = (e) => { 
+        const wb = XLSX.read(e.target.result, { type: 'binary' }); 
+        const sheetName = wb.SheetNames[0]; 
+        const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]); 
+        const processedData = processLargeRiskFile(json); 
+        downloadJson(processedData, "LARGE_RISK_UNDERWRITTEN.json"); 
+      }; 
+      reader.readAsBinaryString(largeRiskFile); 
+    } 
+ 
     setTimeout(() => { 
       setProcessing(false); 
       setActiveModal(null); 
@@ -390,6 +422,7 @@ grouped[time][brokerName][subChannel][lob] = 0;
       setFireBancaFile(null); 
       setNewBusinessFile(null); 
       setNewInitiativesFile(null); 
+      setLargeRiskFile(null); 
       alert("Files processed! JSON files have been downloaded. Please move them to 'src/data'."); 
     }, 1000); 
   }; 
@@ -404,6 +437,7 @@ grouped[time][brokerName][subChannel][lob] = 0;
     setFireBancaFile(null); 
     setNewBusinessFile(null); 
     setNewInitiativesFile(null); 
+    setLargeRiskFile(null); 
   }; 
  
   return ( 
@@ -847,8 +881,65 @@ hover:bg-gray-50 font-medium transition-colors"
                     <button 
                       onClick={handleUploadAndProcess} 
                       disabled={!newInitiativesFile || processing} 
-                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md transition-colors ${ 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
                         !newInitiativesFile || processing 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
+                        }`} 
+                    > 
+                      {processing ? 'Processing...' : 'Process & Download JSON'} 
+                    </button> 
+                  </div> 
+                </div> 
+              ) : activeModal === 'Large risk underwritten - More than 2500 Cr' ? ( 
+                /* Layout for Large Risk Underwritten */ 
+                <div className="space-y-4"> 
+                  <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3"> 
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" /> 
+                    <p className="text-xs text-blue-800"> 
+                      Upload the Large Risk Underwritten Excel file. The system will create a grouped list of large 
+risks. 
+                    </p> 
+                  </div> 
+ 
+                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 
+transition-colors"> 
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Large Risk Data 
+File</label> 
+                    <div className="flex items-center gap-3"> 
+                      <label className="flex-1 cursor-pointer"> 
+                        <div className="flex items-center justify-center w-full px-4 py-2 bg-white border 
+border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
+                          {largeRiskFile ? ( 
+                            <span className="flex items-center text-green-600 gap-2"><CheckCircle 
+className="w-4 h-4" /> Selected</span> 
+                          ) : ( 
+                            <span>Choose Excel File</span> 
+                          )} 
+                        </div> 
+                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => 
+setLargeRiskFile(e.target.files[0])} /> 
+                      </label> 
+                      {largeRiskFile && <span className="text-xs text-gray-500 truncate 
+max-w-[100px]">{largeRiskFile.name}</span>} 
+                    </div> 
+                  </div> 
+ 
+                  <div className="mt-6 flex gap-3"> 
+                    <button 
+                      onClick={closeModal} 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
+                    > 
+                      Cancel 
+                    </button> 
+                    <button 
+                      onClick={handleUploadAndProcess} 
+                      disabled={!largeRiskFile || processing} 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
+                        !largeRiskFile || processing 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
                         }`} 
