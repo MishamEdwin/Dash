@@ -24,7 +24,8 @@ const OverAllReview = ({ selectedDate }) => {
   const [lobSegmentRawData, setLobSegmentRawData] = useState({}); 
   const [fireBancaRawData, setFireBancaRawData] = useState([]); 
   const [newBusinessSourcedData, setNewBusinessSourcedData] = useState({}); 
-  const [fetchedNewInitiatives, setFetchedNewInitiatives] = useState({}); // New State for Initiatives 
+  const [fetchedNewInitiatives, setFetchedNewInitiatives] = useState({});  
+  const [fetchedLargeRisk, setFetchedLargeRisk] = useState({}); // New State for Large Risk 
   const [allData, setAllData] = useState({}); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
@@ -103,7 +104,8 @@ const OverAllReview = ({ selectedDate }) => {
         const fireBancaJson = getFile('FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT') || 
 []; 
         const newBusinessJson = getFile('NEW_BUSINESS_SOURCED') || {}; 
-        const newInitiativesJson = getFile('NEW_INITIATIVES') || {}; // Load Initiatives 
+        const newInitiativesJson = getFile('NEW_INITIATIVES') || {};  
+        const largeRiskJson = getFile('LARGE_RISK_UNDERWRITTEN') || {}; // Load Large Risk Data 
         const overallJson = getFile('overall_review_data') || {}; 
  
         setLobRawData(lobJson); 
@@ -113,6 +115,7 @@ const OverAllReview = ({ selectedDate }) => {
         setFireBancaRawData(fireBancaJson); 
         setNewBusinessSourcedData(newBusinessJson); 
         setFetchedNewInitiatives(newInitiativesJson); 
+        setFetchedLargeRisk(largeRiskJson); 
         setAllData(overallJson); 
  
         // Initialize Chart Dropdown   
@@ -563,8 +566,8 @@ ytd: [] };
   const inwardMonthData = inwardFacRaw[inwardMonthKey] || []; 
   const inwardYtdData = inwardFacRaw.ytd || []; 
    
-  const largeRiskData = allData?.largeRiskDataMap?.[currentKey] || 'Nil'; 
-  // newInitiativesData no longer derived from allData, now fetched independently 
+  // No longer use static largeRiskData derived from allData 
+  const newInitiativesData = allData?.newInitiativesDataMap?.[currentKey] || ''; 
   const popupData = allData?.popupDataMap?.[popupPeriod] || []; 
  
   if (loading) return <div className="or-loader-container"><div className="or-loader"></div></div>; 
@@ -1016,12 +1019,25 @@ paddingLeft: 0 }}>
               <p>No Data</p> 
             )} 
           </div> 
+           
+          {/* LARGE RISK UNDERWRITTEN SECTION - DYNAMIC */} 
           <div className="or-bottom-header or-bottom-header-secondary" style={{ padding: '0.2rem 0', 
 fontSize: '11px', marginTop: '0.3rem' }}> 
-            Large risk underwritten - More than 2500 Cr - {getDefaultKey()} 
+            Large risk underwritten - More than 2500 Cr - {fetchedLargeRisk.Time || getDefaultKey()} 
           </div> 
           <div className="or-bottom-content" style={{ padding: '0.2rem', fontSize: '9px', lineHeight: '1.2' 
-}}>{largeRiskData}</div> 
+}}> 
+             {fetchedLargeRisk.Data && fetchedLargeRisk.Data.length > 0 ? ( 
+               <ul className="or-bottom-list" style={{ marginBottom: '0.2rem', listStyleType: 'none', 
+paddingLeft: 0 }}> 
+                 {fetchedLargeRisk.Data.flatMap(str => str.split(/\r?\n/)).filter(s => s.trim() !== '').map((item, idx) => ( 
+                   <li key={idx} style={{marginBottom: '4px'}}>{item.trim()}</li> 
+                 ))} 
+               </ul> 
+            ) : ( 
+               <p>No Data</p> 
+            )} 
+          </div> 
         </div> 
          
         {/* NEW INITIATIVES SECTION - DYNAMIC */} 
@@ -1107,8 +1123,9 @@ row.marine_gwp,
             </div> 
           </div> 
         </div> 
-)} 
-</div> 
-); 
+      )} 
+    </div> 
+  ); 
 }; 
-export default OverAllReview;
+ 
+export default OverAllReview; 
