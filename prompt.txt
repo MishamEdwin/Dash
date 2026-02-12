@@ -1,84 +1,83 @@
-	• This work is for "Upload.jsx" component's "Last Five year comparison" part.
-	• The uploaded Excel file should be processed and saved as as json file in "src/data/LAST_FIVE_YEARS_COMPARISON.json".
-	• If the uploaded data is in this format:
-	• Segment	Apr'24 - Mar'25		 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 
-		FIRE	 	 	ENGINEERING		 	MISCELLANEOUS		 	Marine	 	 	Liability	 	 	Overall	 	 
-		NOP	GWP	GIC:GEP	NOP	GWP	GIC:GEP	NOP	GWP	GIC:GEP	NOP	GWP	GIC:GEP	NOP	GWP	GIC:GEP	NOP	GWP	GIC:GEP
-	JK	507	1237.567	-0.54109	333	73.90399	-0.03346	295	5.176373	0.46226	366	955.3814	0.44068	426	70.31028	-0.22416	1927	2342.339	-0.10723
-	Banca PSU	965182	2843.146	0.365253	713	18.21892	0.353747	448988	500.0772	0.088435	66	2.716414	0.03274	87	24.22662	0.069447	1415036	3388.385	0.306441
-	Partner Others	421703	1426.331	0.181573	4825	43.86173	0.656637	2933	58.91664	0.193069	1814	9.212329	0.004717	75	4.104214	0.02919	431350	1542.426	0.211608
-	Commercial	7180	1788.748	0.906512	961	221.3643	0.703227	2407	43.86358	0.460978	1546	319.6409	0.911091	1327	55.23912	0.066481	13421	2428.856	0.865217
-	SME	12139	579.8795	-0.15401	957	109.0436	0.54864	2952	12.50469	0.238591	6526	158.316	0.532106	5615	73.66005	0.072188	28189	933.4039	0.077042
-	Others	3413	48.78309	0.038724	140	17.57232	0.879975	216	0.713365	0	1806	11.43626	0.486018	861	30.53693	-0.03134	6436	109.042	0.069163
-	Total	1410124	7924.455	0.290287	7929	483.9649	0.52937	457791	621.2519	0.127328	12124	1456.703	0.550787	8391	258.0772	-0.01439	1896359	10744.45	0.318011
-	
-	Then the data should be saved like this:
-	{
-	  "Apr'24 - Mar'25": [
+	• This work is for OverAllReview.jsx component's " Click Here - LOB Segment wise Report Last 5 Years Comparison" button.
+	• First change the color of the button to this "#ff0066".
+	• When I click the button it should display two tables as shown in the image.
+	• Instructions for the 1st table:
+                              It should fetch the data from this json file"src/data/LOB_AND_SEGMENT_WISE_DATA_02.json".
+	                              It should only use the YTD time period data eg("April, 2025-26 - December, 2025-26", "April, 2024-25 - December, 2024-25").
+			        By default it should display the most recent time period data eg("April, 2025-26 - December, 2025-26") which can be changed from select a different YTD time period from the dropdown.        
+        The table header should display the Time period based on the selected Time period from the dropdown.
+			        For the "NOP" use the "Total NOP", For the "GWP" use the "Total Prem" value divided by "1000000" without any decimal values, For the "GIC:GEP" use the "(Total Claim incurred in Period/Total Earned Prem) * 100" value with "%" symbol at the end. At the bottom of the table add a TOTAL Column header as shown in the image.
+	•  Instructions for the 2nd table:
+	                               It should fetch the data from this json file "src/data/LAST_FIVE_YEARS_COMPARISON.json".
+	                               The data should be displayed according to the Time period which is chosen from the dropdown.
+	                               The table header should display the Time period based on the selected Time period from the dropdown.
+	                               This how the data is stored in the json file. Access it accordingly:
+                                              
+	"Apr'24 - Mar'25": [
 	    {
 	      "Segment": "JK",
-	      "FIRE": { "NOP": 507, "GWP": 1237.567, "GIC:GEP": -0.54109 },
-	      "ENGINEERING": { "NOP": 333, "GWP": 73.90399, "GIC:GEP": -0.03346 },
-	      "MISCELLANEOUS": { "NOP": 295, "GWP": 5.176373, "GIC:GEP": 0.46226 },
-	      "Marine": { "NOP": 366, "GWP": 955.3814, "GIC:GEP": 0.44068 },
-	      "Liability": { "NOP": 426, "GWP": 70.31028, "GIC:GEP": -0.22416 },
-	      "Overall": { "NOP": 1927, "GWP": 2342.339, "GIC:GEP": -0.10723 }
+	      "FIRE": {
+	        "NOP": 507,
+	        "GWP": 1237.56679223,
+	        "GIC:GEP": -0.5410865524188964
+	      },
+	      "ENGINEERING": {
+	        "NOP": 333,
+	        "GWP": 73.90399238999998,
+	        "GIC:GEP": -0.03346276614103316
+	      },
+	      "MISCELLANEOUS": {
+	        "NOP": 295,
+	        "GWP": 5.176373260000001,
+	        "GIC:GEP": 0.46225968944116813
+	      },
+	      "Marine": {
+	        "NOP": 366,
+	        "GWP": 955.38142665,
+	        "GIC:GEP": 0.4406800073426997
+	      },
+	      "Liability": {
+	        "NOP": 426,
+	        "GWP": 70.31027947999999,
+	        "GIC:GEP": -0.2241644866045549
+	      },
+	      "Overall": {
+	        "NOP": 1927,
+	        "GWP": 2342.33886401,
+	        "GIC:GEP": -0.10722961394507133
+	      }
 	    },
 	    {
 	      "Segment": "Banca PSU",
-	      "FIRE": { "NOP": 965182, "GWP": 2843.146, "GIC:GEP": 0.365253 },
-	      "ENGINEERING": { "NOP": 713, "GWP": 18.21892, "GIC:GEP": 0.353747 },
-	      "MISCELLANEOUS": { "NOP": 448988, "GWP": 500.0772, "GIC:GEP": 0.088435 },
-	      "Marine": { "NOP": 66, "GWP": 2.716414, "GIC:GEP": 0.03274 },
-	      "Liability": { "NOP": 87, "GWP": 24.22662, "GIC:GEP": 0.069447 },
-	      "Overall": { "NOP": 1415036, "GWP": 3388.385, "GIC:GEP": 0.306441 }
+	      "FIRE": {
+	        "NOP": 965182,
+	        "GWP": 2843.14590977,
+	        "GIC:GEP": 0.3652527360738522
+	      },
+	      "ENGINEERING": {
+	        "NOP": 713,
+	        "GWP": 18.218920609999998,
+	        "GIC:GEP": 0.35374739188006477
+	      },
+	      "MISCELLANEOUS": {
+	        "NOP": 448988,
+	        "GWP": 500.07724057,
+	        "GIC:GEP": 0.08843466281215222
+	      },
+	      "Marine": {
+	        "NOP": 66,
+	        "GWP": 2.7164143,
+	        "GIC:GEP": 0.03273958092227355
+	      },
+	      "Liability": {
+	        "NOP": 87,
+	        "GWP": 24.226618,
+	        "GIC:GEP": 0.06944699534934118
+	      },
+	      "Overall": {
+	        "NOP": 1415036,
+	        "GWP": 3388.3851032500006,
+	        "GIC:GEP": 0.30644062968299995
+	      }
 	    },
-	    {
-	      "Segment": "Partner Others",
-	      "FIRE": { "NOP": 421703, "GWP": 1426.331, "GIC:GEP": 0.181573 },
-	      "ENGINEERING": { "NOP": 4825, "GWP": 43.86173, "GIC:GEP": 0.656637 },
-	      "MISCELLANEOUS": { "NOP": 2933, "GWP": 58.91664, "GIC:GEP": 0.193069 },
-	      "Marine": { "NOP": 1814, "GWP": 9.212329, "GIC:GEP": 0.004717 },
-	      "Liability": { "NOP": 75, "GWP": 4.104214, "GIC:GEP": 0.02919 },
-	      "Overall": { "NOP": 431350, "GWP": 1542.426, "GIC:GEP": 0.211608 }
-	    },
-	    {
-	      "Segment": "Commercial",
-	      "FIRE": { "NOP": 7180, "GWP": 1788.748, "GIC:GEP": 0.906512 },
-	      "ENGINEERING": { "NOP": 961, "GWP": 221.3643, "GIC:GEP": 0.703227 },
-	      "MISCELLANEOUS": { "NOP": 2407, "GWP": 43.86358, "GIC:GEP": 0.460978 },
-	      "Marine": { "NOP": 1546, "GWP": 319.6409, "GIC:GEP": 0.911091 },
-	      "Liability": { "NOP": 1327, "GWP": 55.23912, "GIC:GEP": 0.066481 },
-	      "Overall": { "NOP": 13421, "GWP": 2428.856, "GIC:GEP": 0.865217 }
-	    },
-	    {
-	      "Segment": "SME",
-	      "FIRE": { "NOP": 12139, "GWP": 579.8795, "GIC:GEP": 0.15401 },
-	      "ENGINEERING": { "NOP": 957, "GWP": 109.0436, "GIC:GEP": 0.54864 },
-	      "MISCELLANEOUS": { "NOP": 2952, "GWP": 12.50469, "GIC:GEP": 0.238591 },
-	      "Marine": { "NOP": 6526, "GWP": 158.316, "GIC:GEP": 0.532106 },
-	      "Liability": { "NOP": 5615, "GWP": 73.66005, "GIC:GEP": 0.072188 },
-	      "Overall": { "NOP": 28189, "GWP": 933.4039, "GIC:GEP": 0.077042 }
-	    },
-	    {
-	      "Segment": "Others",
-	      "FIRE": { "NOP": 3413, "GWP": 48.78309, "GIC:GEP": 0.038724 },
-	      "ENGINEERING": { "NOP": 140, "GWP": 17.57232, "GIC:GEP": 0.879975 },
-	      "MISCELLANEOUS": { "NOP": 216, "GWP": 0.713365, "GIC:GEP": 0 },
-	      "Marine": { "NOP": 1806, "GWP": 11.43626, "GIC:GEP": 0.486018 },
-	      "Liability": { "NOP": 861, "GWP": 30.53693, "GIC:GEP": -0.03134 },
-	      "Overall": { "NOP": 6436, "GWP": 109.042, "GIC:GEP": 0.069163 }
-	    },
-	    {
-	      "Segment": "Total",
-	      "FIRE": { "NOP": 1410124, "GWP": 7924.455, "GIC:GEP": 0.290287 },
-	      "ENGINEERING": { "NOP": 7929, "GWP": 483.9649, "GIC:GEP": 0.52937 },
-	      "MISCELLANEOUS": { "NOP": 457791, "GWP": 621.2519, "GIC:GEP": 0.127328 },
-	      "Marine": { "NOP": 12124, "GWP": 1456.703, "GIC:GEP": 0.550787 },
-	      "Liability": { "NOP": 8391, ",GWP": 258.0772, "GIC:GEP": -0.01439 },
-	      "Overall": { "NOP": 1896359, "GWP": 10744.45, "GIC:GEP": 0.318011 }
-	    }
-	  ]
-	}
-	• Please don't add, remove or change any part of the code unnecessarily.
-Implement the changes I've asked and give me the complete working code ready to paste.
+Please don't add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
