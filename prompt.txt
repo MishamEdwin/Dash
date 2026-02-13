@@ -1,83 +1,95 @@
-	• This work is for OverAllReview.jsx component's " Click Here - LOB Segment wise Report Last 5 Years Comparison" button.
-	• First change the color of the button to this "#ff0066".
-	• When I click the button it should display two tables as shown in the image.
-	• Instructions for the 1st table:
-                              It should fetch the data from this json file"src/data/LOB_AND_SEGMENT_WISE_DATA_02.json".
-	                              It should only use the YTD time period data eg("April, 2025-26 - December, 2025-26", "April, 2024-25 - December, 2024-25").
-			        By default it should display the most recent time period data eg("April, 2025-26 - December, 2025-26") which can be changed from select a different YTD time period from the dropdown.        
-        The table header should display the Time period based on the selected Time period from the dropdown.
-			        For the "NOP" use the "Total NOP", For the "GWP" use the "Total Prem" value divided by "1000000" without any decimal values, For the "GIC:GEP" use the "(Total Claim incurred in Period/Total Earned Prem) * 100" value with "%" symbol at the end. At the bottom of the table add a TOTAL Column header as shown in the image.
-	•  Instructions for the 2nd table:
-	                               It should fetch the data from this json file "src/data/LAST_FIVE_YEARS_COMPARISON.json".
-	                               The data should be displayed according to the Time period which is chosen from the dropdown.
-	                               The table header should display the Time period based on the selected Time period from the dropdown.
-	                               This how the data is stored in the json file. Access it accordingly:
-                                              
-	"Apr'24 - Mar'25": [
-	    {
-	      "Segment": "JK",
-	      "FIRE": {
-	        "NOP": 507,
-	        "GWP": 1237.56679223,
-	        "GIC:GEP": -0.5410865524188964
+	• This work is for Upload.jsx component's Cordys TAT Report button.
+	• The uploaded Excel file should be processed and saved as as json file in "src/data/CORDYS_TAT_REPORT.json".
+	• If the uploaded data is in this format:
+	
+	Month	LOB	Same Day				Next day				Beyond that		Grand Total
+			No of RFQ's		%		No of RFQ's		%		No of RFQ's	%	
+													
+	HI	Fire	358		70%		81		16%		72	14%	511
+		Engineering	198		69%		54		19%		34	12%	286
+		Miscellaneous	407		85%		49		10%		25	5%	481
+		Total 	963		75%		184		14%		131	10%	1,278
+	Q3	Fire	152		70%		30		14%		36	17%	218
+		Engineering	96		70%		20		15%		21	15%	137
+		Miscellaneous	157		72%		26		12%		36	16%	219
+		Total 	405		71%		76		13%		93	16%	574
+	Overall Total		1368		74%		260		14%		224	12%	1,852
+	• Then the processed data should be saved in this format:
+	[
+	  {
+	    "Month": "H1",
+	    "Data": [
+	      {
+	        "LOB": "Fire",
+	        "Same Day": { "No of RFQ's": 358, "%": "70%" },
+	        "Next day": { "No of RFQ's": 81, "%": "16%" },
+	        "Beyond that": { "No of RFQ's": 72, "%": "14%" },
+	        "Grand Total": 511
 	      },
-	      "ENGINEERING": {
-	        "NOP": 333,
-	        "GWP": 73.90399238999998,
-	        "GIC:GEP": -0.03346276614103316
+	      {
+	        "LOB": "Engineering",
+	        "Same Day": { "No of RFQ's": 198, "%": "69%" },
+	        "Next day": { "No of RFQ's": 54, "%": "19%" },
+	        "Beyond that": { "No of RFQ's": 34, "%": "12%" },
+	        "Grand Total": 286
 	      },
-	      "MISCELLANEOUS": {
-	        "NOP": 295,
-	        "GWP": 5.176373260000001,
-	        "GIC:GEP": 0.46225968944116813
+	      {
+	        "LOB": "Miscellaneous",
+	        "Same Day": { "No of RFQ's": 407, "%": "85%" },
+	        "Next day": { "No of RFQ's": 49, "%": "10%" },
+	        "Beyond that": { "No of RFQ's": 25, "%": "5%" },
+	        "Grand Total": 481
 	      },
-	      "Marine": {
-	        "NOP": 366,
-	        "GWP": 955.38142665,
-	        "GIC:GEP": 0.4406800073426997
-	      },
-	      "Liability": {
-	        "NOP": 426,
-	        "GWP": 70.31027947999999,
-	        "GIC:GEP": -0.2241644866045549
-	      },
-	      "Overall": {
-	        "NOP": 1927,
-	        "GWP": 2342.33886401,
-	        "GIC:GEP": -0.10722961394507133
+	      {
+	        "LOB": "Total",
+	        "Same Day": { "No of RFQ's": 963, "%": "75%" },
+	        "Next day": { "No of RFQ's": 184, "%": "14%" },
+	        "Beyond that": { "No of RFQ's": 131, "%": "10%" },
+	        "Grand Total": 1278
 	      }
-	    },
-	    {
-	      "Segment": "Banca PSU",
-	      "FIRE": {
-	        "NOP": 965182,
-	        "GWP": 2843.14590977,
-	        "GIC:GEP": 0.3652527360738522
+	    ]
+	  },
+	  {
+	    "Month": "Q3",
+	    "Data": [
+	      {
+	        "LOB": "Fire",
+	        "Same Day": { "No of RFQ's": 152, "%": "70%" },
+	        "Next day": { "No of RFQ's": 30, "%": "14%" },
+	        "Beyond that": { "No of RFQ's": 36, "%": "17%" },
+	        "Grand Total": 218
 	      },
-	      "ENGINEERING": {
-	        "NOP": 713,
-	        "GWP": 18.218920609999998,
-	        "GIC:GEP": 0.35374739188006477
+	      {
+	        "LOB": "Engineering",
+	        "Same Day": { "No of RFQ's": 96, "%": "70%" },
+	        "Next day": { "No of RFQ's": 20, "%": "15%" },
+	        "Beyond that": { "No of RFQ's": 21, "%": "15%" },
+	        "Grand Total": 137
 	      },
-	      "MISCELLANEOUS": {
-	        "NOP": 448988,
-	        "GWP": 500.07724057,
-	        "GIC:GEP": 0.08843466281215222
+	      {
+	        "LOB": "Miscellaneous",
+	        "Same Day": { "No of RFQ's": 157, "%": "72%" },
+	        "Next day": { "No of RFQ's": 26, "%": "12%" },
+	        "Beyond that": { "No of RFQ's": 36, "%": "15%" },
+	        "Grand Total": 219
 	      },
-	      "Marine": {
-	        "NOP": 66,
-	        "GWP": 2.7164143,
-	        "GIC:GEP": 0.03273958092227355
-	      },
-	      "Liability": {
-	        "NOP": 87,
-	        "GWP": 24.226618,
-	        "GIC:GEP": 0.06944699534934118
-	      },
-	      "Overall": {
-	        "NOP": 1415036,
-	        "GWP": 3388.3851032500006,
-	        "GIC:GEP": 0.30644062968299995
+	      {
+	        "LOB": "Total",
+	        "Same Day": { "No of RFQ's": 405, "%": "71%" },
+	        "Next day": { "No of RFQ's": 76, "%": "13%" },
+	        "Beyond that": { "No of RFQ's": 93, "%": "16%" },
+	        "Grand Total": 574
 	      }
-	    },
-Please don't add, remove or change any part of the code unnecessarily. Implement the changes I've asked and give me the complete working code ready to paste.
+	    ]
+	  },
+	  {
+	    "Overall Total": {
+	      "Same Day": { "No of RFQ's": 1368, "%": "74%" },
+	      "Next day": { "No of RFQ's": 260, "%": "14%" },
+	      "Beyond that": { "No of RFQ's": 224, "%": "12%" },
+	      "Grand Total": 1852
+	    }
+	  }
+	]
+	
+	• Please don't add, remove or change any part of the code unnecessarily. Just implement the changes I've asked and give me the complete working code ready to paste.
