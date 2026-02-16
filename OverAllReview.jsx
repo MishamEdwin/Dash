@@ -1270,7 +1270,7 @@ right: '15px', background: 'none', border: 'none', fontSize: '20px', cursor: 'po
                 </thead>  
                 <tbody>  
                   {popupTable2Data.map((row, i) => (  
-                    <tr key={i} style={row.isTotal ? { backgroundColor: '#fbcfe8', fontWeight: 'bold' } : { backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}>  
+                    <tr key={i} style={row.Segment === 'TOTAL' ? { backgroundColor: '#fbcfe8', fontWeight: 'bold' } : { backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white' }}>  
                       <td style={{ border: '1px solid #ccc', padding: '4px', fontWeight: 'bold' }}>{row.Segment}</td>  
                       {['FIRE', 'ENGINEERING', 'MISCELLANEOUS', 'Marine', 'Liability', 'Overall'].map(colKey => { 
                           const cell = row[colKey] || { NOP: 0, GWP: 0, 'GIC:GEP': 0 }; 
@@ -1284,7 +1284,7 @@ right: '15px', background: 'none', border: 'none', fontSize: '20px', cursor: 'po
                       })} 
                     </tr>  
                   ))}  
-                </tbody>  
+                </tbody>   
               </table>  
             </div>  
           </div>  
