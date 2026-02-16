@@ -1,166 +1,30 @@
-	• This work is for OverAllReview.jsx component's Cordys TAT Report part.
-	• I want it to fetch the data from this file "src/data/CORDYS_TAT_REPORT.json".
-	• The data should be displayed as shown in the image.
-	• Please don't add, remove or change any part of the code unnecessarily.
-	• Just implement the changes I've asked and give me the complete working code ready to paste.
-Please be careful.
-
-The data is in this format.
-
-[
-  {
-    "Month": "HI",
-    "Data": [
-      {
-        "LOB": "Fire",
-        "Same Day": {
-          "No of RFQ's": 358,
-          "%": "70%"
-        },
-        "Next day": {
-          "No of RFQ's": 81,
-          "%": "16%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 72,
-          "%": "14%"
-        },
-        "Grand Total": 511
-      },
-      {
-        "LOB": "Engineering",
-        "Same Day": {
-          "No of RFQ's": 198,
-          "%": "69%"
-        },
-        "Next day": {
-          "No of RFQ's": 54,
-          "%": "19%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 34,
-          "%": "12%"
-        },
-        "Grand Total": 286
-      },
-      {
-        "LOB": "Miscellaneous",
-        "Same Day": {
-          "No of RFQ's": 407,
-          "%": "85%"
-        },
-        "Next day": {
-          "No of RFQ's": 49,
-          "%": "10%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 25,
-          "%": "5%"
-        },
-        "Grand Total": 481
-      },
-      {
-        "LOB": "Total ",
-        "Same Day": {
-          "No of RFQ's": 963,
-          "%": "75%"
-        },
-        "Next day": {
-          "No of RFQ's": 184,
-          "%": "14%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 131,
-          "%": "10%"
-        },
-        "Grand Total": 1278
-      }
-    ]
-  },
-  {
-    "Month": "Q3",
-    "Data": [
-      {
-        "LOB": "Fire",
-        "Same Day": {
-          "No of RFQ's": 152,
-          "%": "70%"
-        },
-        "Next day": {
-          "No of RFQ's": 30,
-          "%": "14%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 36,
-          "%": "17%"
-        },
-        "Grand Total": 218
-      },
-      {
-        "LOB": "Engineering",
-        "Same Day": {
-          "No of RFQ's": 96,
-          "%": "70%"
-        },
-        "Next day": {
-          "No of RFQ's": 20,
-          "%": "15%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 21,
-          "%": "15%"
-        },
-        "Grand Total": 137
-      },
-      {
-        "LOB": "Miscellaneous",
-        "Same Day": {
-          "No of RFQ's": 157,
-          "%": "72%"
-        },
-        "Next day": {
-          "No of RFQ's": 26,
-          "%": "12%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 36,
-          "%": "16%"
-        },
-        "Grand Total": 219
-      },
-      {
-        "LOB": "Total ",
-        "Same Day": {
-          "No of RFQ's": 405,
-          "%": "71%"
-        },
-        "Next day": {
-          "No of RFQ's": 76,
-          "%": "13%"
-        },
-        "Beyond that": {
-          "No of RFQ's": 93,
-          "%": "16%"
-        },
-        "Grand Total": 574
-      }
-    ]
-  },
-  {
-    "Overall Total": {
-      "Same Day": {
-        "No of RFQ's": 1368,
-        "%": "74%"
-      },
-      "Next day": {
-        "No of RFQ's": 260,
-        "%": "14%"
-      },
-      "Beyond that": {
-        "No of RFQ's": 224,
-        "%": "12%"
-      },
-      "Grand Total": 1852
-    }
-  }
-]
+	• This work is for "Upload.jsx" component's Inward Fac button. Implement the changes in this code that I'm uploading right now.
+	• The uploaded Excel file should be processed and saved as as json file src/data/INWARD_FAC.json".
+	• If the uploaded data is in this format:
+	• Then it should be processed and saved like this:
+	Policy #	Time	FAC Inward	LOB 	Policy begin date	Policy end date	Prem	Net Pol	Issued Pol	Delta risk SI	Ceding Share %	Ceding Share SI	Status	Claim incurred in period	Earned Prem
+	2130/00997617/000/00	December, 2025/26	FAC Inward	FIRE	25-09-2016	24-09-2017	0	0	0	0	% 5.00	0.00	Considered	0	0
+	2130/00997617/000/00	April, 2025-26 - December, 2025-26	FAC Inward	FIRE	25-09-2016	24-09-2017	0	0	0	0	% 5.00	0.00	Considered	0	0
+	
+	{
+	  "Time": {
+	    "December": {
+	           "FIRE":{
+	                 "NOP": // Aggregate SUM of all the Net Pol for that particular LOB and Time
+	                 "GWP":// Aggregate SUM of all the Prem for that particular LOB and Time
+	                  "SI":// Aggregate SUM of all the Ceding Share SI for that particular LOB and Time
+		       "GIC"://Aggregate SUM of all the Claim incurred in period for that particular LOB and Time
+		       "GEP"://Aggregate SUM of all the Earned Prem for that particular LOB and Time
+	            }
+	      },
+	    "April, 2025": {
+		 "FIRE":{
+		                 "NOP": // Aggregate SUM of all the Net Pol for that particular LOB and Time
+		                 "GWP":// Aggregate SUM of all the Prem for that particular LOB and Time
+		                  "SI":// Aggregate SUM of all the Ceding Share SI for that particular LOB and Time
+			       "GIC"://Aggregate SUM of all the Claim incurred in period for that particular LOB and Time
+			       "GEP"://Aggregate SUM of all the Earned Prem for that particular LOB and Time
+		            }
+	      }
+	• You can leave out the Policy #, FAC Inward, Policy begin data, Policy end date, Issued Pol, Delta risk SI, Ceding Share %, Status.
+	• Please don't add, remove or change any part of the code unnecessarily. Just implement the changes I've asked and give me the complete working code ready to paste.
