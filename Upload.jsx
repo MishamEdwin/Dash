@@ -2,23 +2,21 @@ import React, { useState } from 'react';
 import { X, Download, Upload as UploadIcon, FileText, CheckCircle, AlertCircle } from 
 'lucide-react'; 
 import * as XLSX from 'xlsx'; 
- 
 const Upload = () => { 
-  const [selectedDate, setSelectedDate] = useState({ month: 'January', year: '2025-26' }); 
-  const [activeTab, setActiveTab] = useState('OverAllReview'); 
-  const [activeModal, setActiveModal] = useState(null); 
- 
-  // State for specific files 
-  const [lobFile, setLobFile] = useState(null); 
-  const [dwellingsFile, setDwellingsFile] = useState(null); 
-  const [brokerFile, setBrokerFile] = useState(null); 
-  const [lobSegmentFile, setLobSegmentFile] = useState(null); 
-  const [fireBancaFile, setFireBancaFile] = useState(null); 
-  const [newBusinessFile, setNewBusinessFile] = useState(null); 
-  const [newInitiativesFile, setNewInitiativesFile] = useState(null); 
-  const [largeRiskFile, setLargeRiskFile] = useState(null); 
-  const [lastFiveYearsFile, setLastFiveYearsFile] = useState(null);  
- 
+const [selectedDate, setSelectedDate] = useState({ month: 'January', year: '2025-26' }); 
+const [activeTab, setActiveTab] = useState('OverAllReview'); 
+const [activeModal, setActiveModal] = useState(null); 
+// State for specific files 
+const [lobFile, setLobFile] = useState(null); 
+const [dwellingsFile, setDwellingsFile] = useState(null); 
+const [brokerFile, setBrokerFile] = useState(null); 
+const [lobSegmentFile, setLobSegmentFile] = useState(null); 
+const [fireBancaFile, setFireBancaFile] = useState(null); 
+const [newBusinessFile, setNewBusinessFile] = useState(null); 
+const [newInitiativesFile, setNewInitiativesFile] = useState(null); 
+const [largeRiskFile, setLargeRiskFile] = useState(null); 
+const [lastFiveYearsFile, setLastFiveYearsFile] = useState(null); 
+const [cordysFile, setCordysFile] = useState(null); // New State for Cordys TAT 
   // New state for processing 
   const [processing, setProcessing] = useState(false); 
  
@@ -105,10 +103,8 @@ const Upload = () => {
  
       if (!grouped[time]) grouped[time] = {}; 
       if (!grouped[time][brokerName]) grouped[time][brokerName] = {}; 
-      if (!grouped[time][brokerName][subChannel]) grouped[time][brokerName][subChannel] = 
-{ "Grand Total": 0 }; 
-      if (!grouped[time][brokerName][subChannel][lob]) 
-grouped[time][brokerName][subChannel][lob] = 0; 
+      if (!grouped[time][brokerName][subChannel]) grouped[time][brokerName][subChannel] = { "Grand Total": 0 }; 
+      if (!grouped[time][brokerName][subChannel][lob]) grouped[time][brokerName][subChannel][lob] = 0; 
  
       grouped[time][brokerName][subChannel][lob] += prem; 
       grouped[time][brokerName][subChannel]["Grand Total"] += prem; 
@@ -142,8 +138,7 @@ grouped[time][brokerName][subChannel][lob] = 0;
       grouped[time][subChannel][lob]["Total NOP"] += parseExcelNumber(row['Net Pol']); 
       grouped[time][subChannel][lob]["Total Prem"] += parseExcelNumber(row['Prem']); 
       grouped[time][subChannel][lob]["Total Earned Prem"] += parseExcelNumber(row['Earned Prem']); 
-      grouped[time][subChannel][lob]["Total Claim incurred in Period"] += 
-parseExcelNumber(row['Claim incurred in period']); 
+      grouped[time][subChannel][lob]["Total Claim incurred in Period"] += parseExcelNumber(row['Claim incurred in period']); 
     }); 
  
     return grouped; 
@@ -271,30 +266,18 @@ parseExcelNumber(row['Claim incurred in period']);
     return result; 
   }; 
  
-  // --- Logic: Process Last Five Years Comparison File (Horizontal Scanning) --- 
+  // --- Logic: Process Last Five Years Comparison File --- 
   const processLastFiveYearsFile = (data) => { 
-    // Expects array of arrays (header: 1) 
     if (!data || data.length < 4) return {}; 
- 
-    const headerRow = data[0]; // Row 1 containing Time Headers 
+    const headerRow = data[0];  
     const result = {}; 
  
-    // Scan headers to find time periods 
-    // Assuming structure: Segment | Period 1 (18 cols) | Period 2 (18 cols) ... 
-    // Start from col index 1. 
     for (let colIndex = 1; colIndex < headerRow.length; colIndex++) { 
       const timePeriod = headerRow[colIndex]; 
-       
       if (timePeriod) { 
-        // We found a time header. Now extract the rows below it for this period's block. 
-        // The block width is 18 columns (6 LOBs * 3 Metrics). 
-         
         const periodData = []; 
-         
-        // Data starts from Row 4 (index 3) 
         for (let rowIndex = 3; rowIndex < data.length; rowIndex++) { 
           const row = data[rowIndex]; 
-          // Valid row must have a Segment name in column 0 
           if (!row || !row[0]) continue;  
  
           const getVal = (offset) => parseExcelNumber(row[colIndex + offset]); 
@@ -310,14 +293,68 @@ parseExcelNumber(row['Claim incurred in period']);
           }; 
           periodData.push(rowObj); 
         } 
-         
-        // Add to result if we found data 
         if (periodData.length > 0) { 
             result[timePeriod] = periodData; 
         } 
       } 
     } 
+    return result; 
+  }; 
  
+  // --- Logic: Process Cordys TAT Report --- 
+  const processCordysFile = (data) => { 
+    const result = []; 
+    let currentMonthGroup = null; 
+ 
+    const formatPct = (val) => { 
+      if (val === undefined || val === null) return "0%"; 
+      if (typeof val === 'number') { 
+         return `${Math.round(val * 100)}%`;  
+      } 
+      return val; 
+    }; 
+ 
+    for (let i = 0; i < data.length; i++) { 
+        const row = data[i]; 
+        if (!row || row.length === 0) continue; 
+ 
+        const str0 = (row[0] || '').toString(); 
+        const str1 = (row[1] || '').toString(); 
+         
+        if (str0.includes('Month') || str1.includes('No of RFQ')) continue; 
+ 
+        if (str0.toLowerCase().includes('overall total')) { 
+             const overallObj = { 
+                "Overall Total": { 
+                  "Same Day": { "No of RFQ's": row[2], "%": formatPct(row[3]) }, 
+                  "Next day": { "No of RFQ's": row[4], "%": formatPct(row[5]) }, 
+                  "Beyond that": { "No of RFQ's": row[6], "%": formatPct(row[7]) }, 
+                  "Grand Total": row[8] 
+                } 
+             }; 
+             result.push(overallObj); 
+             continue; 
+        } 
+ 
+        if (row[0]) { 
+            currentMonthGroup = { 
+                "Month": row[0], 
+                "Data": [] 
+            }; 
+            result.push(currentMonthGroup); 
+        } 
+ 
+        if (row[1] && currentMonthGroup) { 
+            const entry = { 
+                "LOB": row[1], 
+                "Same Day": { "No of RFQ's": row[2], "%": formatPct(row[3]) }, 
+                "Next day": { "No of RFQ's": row[4], "%": formatPct(row[5]) }, 
+                "Beyond that": { "No of RFQ's": row[6], "%": formatPct(row[7]) }, 
+                "Grand Total": row[8] 
+            }; 
+            currentMonthGroup.Data.push(entry); 
+        } 
+    } 
     return result; 
   }; 
  
@@ -397,8 +434,7 @@ parseExcelNumber(row['Claim incurred in period']);
         const sheetName = wb.SheetNames[0]; 
         const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]); 
         const processedData = processFireBancaFile(json); 
-        downloadJson(processedData, 
-"FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT.json"); 
+        downloadJson(processedData, "FIRE_BANCA_CHANNEL_WISE_UNDERINSURANCE_REPORT.json"); 
       }; 
       reader.readAsBinaryString(fireBancaFile); 
     } 
@@ -442,17 +478,35 @@ parseExcelNumber(row['Claim incurred in period']);
       reader.readAsBinaryString(largeRiskFile); 
     } 
  
-    // 9. Process Last Five Years Comparison (Iterate through all columns in first sheet) 
+    // 9. Process Last Five Years Comparison 
     if (lastFiveYearsFile) { 
       const reader = new FileReader(); 
       reader.onload = (e) => { 
         const wb = XLSX.read(e.target.result, { type: 'binary' }); 
-        const sheetName = wb.SheetNames[0]; // Assuming data is on the first sheet side-by-side 
-        const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 }); 
-        const processedData = processLastFiveYearsFile(json); 
-        downloadJson(processedData, "LAST_FIVE_YEARS_COMPARISON.json"); 
+        let allYearsData = {}; 
+        wb.SheetNames.forEach(sheetName => { 
+            const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 }); 
+            const sheetResult = processLastFiveYearsFile(json); 
+            if (sheetResult && Object.keys(sheetResult).length > 0) { 
+                Object.assign(allYearsData, sheetResult); 
+            } 
+        }); 
+        downloadJson(allYearsData, "LAST_FIVE_YEARS_COMPARISON.json"); 
       }; 
       reader.readAsBinaryString(lastFiveYearsFile); 
+    } 
+ 
+    // 10. Process Cordys TAT Report 
+    if (cordysFile) { 
+      const reader = new FileReader(); 
+      reader.onload = (e) => { 
+        const wb = XLSX.read(e.target.result, { type: 'binary' }); 
+        // Use header: 1 to get array of arrays, easier to parse the block structure 
+        const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); 
+        const processedData = processCordysFile(json); 
+        downloadJson(processedData, "CORDYS_TAT_REPORT.json"); 
+      }; 
+      reader.readAsBinaryString(cordysFile); 
     } 
  
     setTimeout(() => { 
@@ -467,6 +521,7 @@ parseExcelNumber(row['Claim incurred in period']);
       setNewInitiativesFile(null); 
       setLargeRiskFile(null); 
       setLastFiveYearsFile(null); 
+      setCordysFile(null); 
       alert("Files processed! JSON files have been downloaded. Please move them to 'src/data'."); 
     }, 1000); 
   }; 
@@ -483,41 +538,36 @@ parseExcelNumber(row['Claim incurred in period']);
     setNewInitiativesFile(null); 
     setLargeRiskFile(null); 
     setLastFiveYearsFile(null); 
+    setCordysFile(null); 
   }; 
  
   return ( 
     <div className="p-6 max-w-6xl mx-auto bg-white min-h-screen"> 
       {/* Header Section */} 
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b pb-6 
-border-gray-100"> 
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b pb-6 border-gray-100"> 
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2"> 
           <UploadIcon className="text-blue-600" /> Excel File Uploader 
         </h1> 
          
         <div className="flex gap-4 mt-4 md:mt-0"> 
           <div className="flex flex-col"> 
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider 
-mb-1">Month</label> 
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Month</label> 
             <select  
               value={selectedDate.month} 
               onChange={(e) => setSelectedDate({ ...selectedDate, month: e.target.value })} 
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
             > 
-              {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 
-'November', 'December'].map(m => ( 
+              {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => ( 
                 <option key={m} value={m}>{m}</option> 
               ))} 
             </select> 
           </div> 
           <div className="flex flex-col"> 
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider 
-mb-1">Financial Year</label> 
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Financial Year</label> 
             <select  
               value={selectedDate.year} 
               onChange={(e) => setSelectedDate({ ...selectedDate, year: e.target.value })} 
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
             > 
               <option value="2024-25">2024-25</option> 
               <option value="2025-26">2025-26</option> 
@@ -1038,8 +1088,65 @@ hover:bg-gray-50 font-medium transition-colors"
                     <button  
                       onClick={handleUploadAndProcess} 
                       disabled={!lastFiveYearsFile || processing} 
-                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md transition-colors ${ 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
                         !lastFiveYearsFile || processing  
+                        ? 'bg-gray-400 cursor-not-allowed'  
+                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
+                      }`} 
+                    > 
+                      {processing ? 'Processing...' : 'Process & Download JSON'} 
+                    </button> 
+                  </div> 
+                </div> 
+              ) : activeModal === 'Cordys TAT Report' ? ( 
+                /* Layout for Cordys TAT Report */ 
+                <div className="space-y-4"> 
+                  <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3"> 
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" /> 
+                    <p className="text-xs text-blue-800"> 
+                      Upload the Cordys TAT Report Excel file. The system will process groupings by Month and 
+LOB. 
+                    </p> 
+                  </div> 
+ 
+                  <div className="border rounded-xl p-4 bg-gray-50 hover:border-blue-300 
+transition-colors"> 
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Cordys TAT Data 
+File</label> 
+                    <div className="flex items-center gap-3"> 
+                      <label className="flex-1 cursor-pointer"> 
+                        <div className="flex items-center justify-center w-full px-4 py-2 bg-white border 
+border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"> 
+                          {cordysFile ? ( 
+                            <span className="flex items-center text-green-600 gap-2"><CheckCircle 
+className="w-4 h-4"/> Selected</span> 
+                          ) : ( 
+                            <span>Choose Excel File</span> 
+                          )} 
+                        </div> 
+                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => 
+setCordysFile(e.target.files[0])} /> 
+                      </label> 
+                      {cordysFile && <span className="text-xs text-gray-500 truncate 
+max-w-[100px]">{cordysFile.name}</span>} 
+                    </div> 
+                  </div> 
+ 
+                  <div className="mt-6 flex gap-3"> 
+                    <button  
+                      onClick={closeModal} 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
+                    > 
+                      Cancel 
+                    </button> 
+                    <button  
+                      onClick={handleUploadAndProcess} 
+                      disabled={!cordysFile || processing} 
+                      className={`flex-1 px-4 py-2 text-white rounded-lg font-medium shadow-md 
+transition-colors ${ 
+                        !cordysFile || processing  
                         ? 'bg-gray-400 cursor-not-allowed'  
                         : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' 
                       }`} 
@@ -1054,7 +1161,9 @@ hover:bg-gray-50 font-medium transition-colors"
                   <div className="mb-6"> 
                     <button  
                       onClick={() => handleDownloadTemplate(activeModal)} 
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl border border-green-200 hover:bg-green-100 transition-colors" 
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-50 
+text-green-700 font-semibold rounded-xl border border-green-200 hover:bg-green-100 
+transition-colors" 
                     > 
                       <Download className="w-5 h-5" /> Download Template 
                     </button> 
@@ -1062,13 +1171,16 @@ hover:bg-gray-50 font-medium transition-colors"
  
                   <div className="space-y-2"> 
                     <label className="block text-sm font-medium text-gray-700">Upload Data File</label> 
-                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-blue-400 transition-colors bg-gray-50"> 
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 
+border-dashed rounded-xl hover:border-blue-400 transition-colors bg-gray-50"> 
                       <div className="space-y-1 text-center"> 
                         <UploadIcon className="mx-auto h-10 w-10 text-gray-400" /> 
                         <div className="flex text-sm text-gray-600"> 
-                          <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"> 
+                          <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent 
+rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"> 
                             <span>Browse files</span> 
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".xlsx, .xls" /> 
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" 
+accept=".xlsx, .xls" /> 
                           </label> 
                         </div> 
                         <p className="text-xs text-gray-500">Excel files only (max. 10MB)</p> 
@@ -1079,11 +1191,13 @@ hover:bg-gray-50 font-medium transition-colors"
                   <div className="mt-8 flex gap-3"> 
                     <button  
                       onClick={closeModal} 
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors" 
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg 
+hover:bg-gray-50 font-medium transition-colors" 
                     > 
                       Cancel 
                     </button> 
-                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md shadow-blue-200 transition-colors"> 
+                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg 
+hover:bg-blue-700 font-medium shadow-md shadow-blue-200 transition-colors"> 
                       Upload File 
                     </button> 
                   </div> 
@@ -1096,4 +1210,5 @@ hover:bg-gray-50 font-medium transition-colors"
     </div> 
   ); 
 }; 
+ 
 export default Upload;
