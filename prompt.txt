@@ -4,3 +4,163 @@
 	• Please don't add, remove or change any part of the code unnecessarily.
 	• Just implement the changes I've asked and give me the complete working code ready to paste.
 Please be careful.
+
+The data is in this format.
+
+[
+  {
+    "Month": "HI",
+    "Data": [
+      {
+        "LOB": "Fire",
+        "Same Day": {
+          "No of RFQ's": 358,
+          "%": "70%"
+        },
+        "Next day": {
+          "No of RFQ's": 81,
+          "%": "16%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 72,
+          "%": "14%"
+        },
+        "Grand Total": 511
+      },
+      {
+        "LOB": "Engineering",
+        "Same Day": {
+          "No of RFQ's": 198,
+          "%": "69%"
+        },
+        "Next day": {
+          "No of RFQ's": 54,
+          "%": "19%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 34,
+          "%": "12%"
+        },
+        "Grand Total": 286
+      },
+      {
+        "LOB": "Miscellaneous",
+        "Same Day": {
+          "No of RFQ's": 407,
+          "%": "85%"
+        },
+        "Next day": {
+          "No of RFQ's": 49,
+          "%": "10%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 25,
+          "%": "5%"
+        },
+        "Grand Total": 481
+      },
+      {
+        "LOB": "Total ",
+        "Same Day": {
+          "No of RFQ's": 963,
+          "%": "75%"
+        },
+        "Next day": {
+          "No of RFQ's": 184,
+          "%": "14%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 131,
+          "%": "10%"
+        },
+        "Grand Total": 1278
+      }
+    ]
+  },
+  {
+    "Month": "Q3",
+    "Data": [
+      {
+        "LOB": "Fire",
+        "Same Day": {
+          "No of RFQ's": 152,
+          "%": "70%"
+        },
+        "Next day": {
+          "No of RFQ's": 30,
+          "%": "14%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 36,
+          "%": "17%"
+        },
+        "Grand Total": 218
+      },
+      {
+        "LOB": "Engineering",
+        "Same Day": {
+          "No of RFQ's": 96,
+          "%": "70%"
+        },
+        "Next day": {
+          "No of RFQ's": 20,
+          "%": "15%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 21,
+          "%": "15%"
+        },
+        "Grand Total": 137
+      },
+      {
+        "LOB": "Miscellaneous",
+        "Same Day": {
+          "No of RFQ's": 157,
+          "%": "72%"
+        },
+        "Next day": {
+          "No of RFQ's": 26,
+          "%": "12%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 36,
+          "%": "16%"
+        },
+        "Grand Total": 219
+      },
+      {
+        "LOB": "Total ",
+        "Same Day": {
+          "No of RFQ's": 405,
+          "%": "71%"
+        },
+        "Next day": {
+          "No of RFQ's": 76,
+          "%": "13%"
+        },
+        "Beyond that": {
+          "No of RFQ's": 93,
+          "%": "16%"
+        },
+        "Grand Total": 574
+      }
+    ]
+  },
+  {
+    "Overall Total": {
+      "Same Day": {
+        "No of RFQ's": 1368,
+        "%": "74%"
+      },
+      "Next day": {
+        "No of RFQ's": 260,
+        "%": "14%"
+      },
+      "Beyond that": {
+        "No of RFQ's": 224,
+        "%": "12%"
+      },
+      "Grand Total": 1852
+    }
+  }
+]
