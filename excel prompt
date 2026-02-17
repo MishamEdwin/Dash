@@ -1,0 +1,3 @@
+	• This is my excel table.
+	• The formula for : AA2 =T2/U2, AB2 = "user input", AC2 = AA2*AB2, AD2 = T2+AC2, AE2 = W2/AD2%
+	• I want AB to give an automated value so that the NEW LR values are lower than 100%.
