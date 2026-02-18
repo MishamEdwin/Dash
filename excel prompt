@@ -1,3 +1,7 @@
-	• This is my excel table.
-	• The formula for : AA2 =T2/U2, AB2 = "user input", AC2 = AA2*AB2, AD2 = T2+AC2, AE2 = W2/AD2%
-	• I want AB to give an automated value so that the NEW LR values are lower than 100%.
+	• This is my excel table's first row.
+	• The formula for K2=D2/E2, L2 =MAX(0, ROUNDUP(((G2/0.95)-D2)/K2,0)), M2=K2*L2, N2 =D2+M2, O2 =G2/N2%.
+	• Right now the "Target NOP" gives a value so that the NEW LR is lower than 95%. I want to add a new column called "Target GWP" which gives a value so that the NEW LR is lower than 95%.
+	• Both the "Target NOP" and "Target GWP" should work in sync. 
+	• By default they both should display an automated appropriate value.
+	• If I manually enter a value for "Target NOP" then the "Target GWP" value should be updated so that "NEW LR" is lower than 95%.
+If I manually enter a value for "Target GWP" then the "Target NOP" value should be updated so that "NEW LR" is lower than 95%.
