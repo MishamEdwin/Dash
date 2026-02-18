@@ -1,30 +1,73 @@
-	• This work is for "Upload.jsx" component's Inward Fac button. Implement the changes in this code that I'm uploading right now.
-	• The uploaded Excel file should be processed and saved as as json file src/data/INWARD_FAC.json".
-	• If the uploaded data is in this format:
-	• Then it should be processed and saved like this:
-	Policy #	Time	FAC Inward	LOB 	Policy begin date	Policy end date	Prem	Net Pol	Issued Pol	Delta risk SI	Ceding Share %	Ceding Share SI	Status	Claim incurred in period	Earned Prem
-	2130/00997617/000/00	December, 2025/26	FAC Inward	FIRE	25-09-2016	24-09-2017	0	0	0	0	% 5.00	0.00	Considered	0	0
-	2130/00997617/000/00	April, 2025-26 - December, 2025-26	FAC Inward	FIRE	25-09-2016	24-09-2017	0	0	0	0	% 5.00	0.00	Considered	0	0
+	• This work is for OverAllReview.jsx component's Inwards Fac Table.
+	• It should use the data from this file "src/data/INWARD_FAC.json".
+	• The Time Period displayed on the table header should be taken from the json file.
+	• The output should be displayed as shown in the image.
+	• This is how the data is stored in the json:
 	
 	{
 	  "Time": {
-	    "December": {
-	           "FIRE":{
-	                 "NOP": // Aggregate SUM of all the Net Pol for that particular LOB and Time
-	                 "GWP":// Aggregate SUM of all the Prem for that particular LOB and Time
-	                  "SI":// Aggregate SUM of all the Ceding Share SI for that particular LOB and Time
-		       "GIC"://Aggregate SUM of all the Claim incurred in period for that particular LOB and Time
-		       "GEP"://Aggregate SUM of all the Earned Prem for that particular LOB and Time
-	            }
+	    "December, 2025/26": {
+	      "FIRE": {
+	        "NOP": 2,
+	        "GWP": 15570485.76,
+	        "SI": 44173346931.823944,
+	        "GIC": -24959351,
+	        "GEP": 23675224.799999997
 	      },
-	    "April, 2025": {
-		 "FIRE":{
-		                 "NOP": // Aggregate SUM of all the Net Pol for that particular LOB and Time
-		                 "GWP":// Aggregate SUM of all the Prem for that particular LOB and Time
-		                  "SI":// Aggregate SUM of all the Ceding Share SI for that particular LOB and Time
-			       "GIC"://Aggregate SUM of all the Claim incurred in period for that particular LOB and Time
-			       "GEP"://Aggregate SUM of all the Earned Prem for that particular LOB and Time
-		            }
+	      "ENGINEERING": {
+	        "NOP": 0,
+	        "GWP": 1440039.94,
+	        "SI": -408240016.2220001,
+	        "GIC": 152393,
+	        "GEP": 1695821.22
+	      },
+	      "MARINE": {
+	        "NOP": 0,
+	        "GWP": 0,
+	        "SI": 0,
+	        "GIC": 0,
+	        "GEP": 0
+	      },
+	      "LIABILITY": {
+	        "NOP": 0,
+	        "GWP": 0,
+	        "SI": 0,
+	        "GIC": 0,
+	        "GEP": 12253.800000000017
 	      }
-	• You can leave out the Policy #, FAC Inward, Policy begin data, Policy end date, Issued Pol, Delta risk SI, Ceding Share %, Status.
-	• Please don't add, remove or change any part of the code unnecessarily. Just implement the changes I've asked and give me the complete working code ready to paste.
+	    },
+	    "April, 2025-26 - December, 2025-26": {
+	      "FIRE": {
+	        "NOP": 69,
+	        "GWP": 228155868.79000008,
+	        "SI": 250921148949.13873,
+	        "GIC": 101686847,
+	        "GEP": 223091601.94999996
+	      },
+	      "ENGINEERING": {
+	        "NOP": 8,
+	        "GWP": 32432031.019999996,
+	        "SI": 7219975199.144634,
+	        "GIC": 71232777,
+	        "GEP": 36492581.32
+	      },
+	      "MARINE": {
+	        "NOP": 0,
+	        "GWP": 5315.42,
+	        "SI": 22618821.762046702,
+	        "GIC": 0,
+	        "GEP": 5315.42
+	      },
+	      "LIABILITY": {
+	        "NOP": 2,
+	        "GWP": 568712.81,
+	        "SI": 141300002.4855137,
+	        "GIC": 0,
+	        "GEP": 57321.73000000001
+	      }
+	    }
+	  }
+	}
+	
+	• Please don’t add, remove or change any part of this code unnecessarily.
+	• Just implement the changes I've asked to this uploaded OverAllReview.jsx file and give me the complete working code ready to paste.
