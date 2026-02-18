@@ -1,7 +1,6 @@
-	• This is my excel table's first row.
-	• The formula for K2=D2/E2, L2 =MAX(0, ROUNDUP(((G2/0.95)-D2)/K2,0)), M2=K2*L2, N2 =D2+M2, O2 =G2/N2%.
-	• Right now the "Target NOP" gives a value so that the NEW LR is lower than 95%. I want to add a new column called "Target GWP" which gives a value so that the NEW LR is lower than 95%.
-	• Both the "Target NOP" and "Target GWP" should work in sync. 
-	• By default they both should display an automated appropriate value.
-	• If I manually enter a value for "Target NOP" then the "Target GWP" value should be updated so that "NEW LR" is lower than 95%.
-If I manually enter a value for "Target GWP" then the "Target NOP" value should be updated so that "NEW LR" is lower than 95%.
+	• It's not working properly.
+	• For eg: The value of K4=28646, L4 = 334, M4 = 9567764, N4 = 9682348 , O4 = 95%.
+	• If I decrease L4 = 200, then M4 becomes 5729200, N4 becomes 5843784 and O4 becomes 157%. But I want the O4 to stay withing 95%.
+	• The logic for default mode is fine.
+	• If I Increase or Decrease the "L" values then the "M" values should generate a value so that the "O" value always stays within 95%.
+Likewise if I Increase or Decrease the "M" values then the "L" values should generate a value so that the "O" value always stays within 95%.
