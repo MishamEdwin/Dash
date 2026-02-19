@@ -1,11 +1,7 @@
-
-	• This work is for Marine.jsx component's Segment wise Report.
+	• This work is for Marine.jsx component's Segment wise GWP mix part.
 	• It should fetch the data from this json file "src/data/LOB_AND_SEGMENT_WISE_DATA_02.json".
-	• The Time Period mentioned on top of the Table header i.e.(YTD December 25) should be displayed in a dropdown and according to the selected time period from the dropdown, the Time periods & data of these below 3 combined tables be displayed.
-	• The Time Period mentioned inside the Table i.e.(December 2025, YTD December 2025, YTD December 2024) headers should be taken from json and it should be dynamic.
-	• It should only use the Marine LOB data from all these time periods.
-	• The data should be displayed in this format as shown in the image.
-	• This is the first few lines of how the data is stored in json:
+	• The dropdown should use the time period data from the json file and the data should be displayed  in the Pie Chart according to the selected time period from the dropdown.
+	• This is how the data is stored in the json:
 	{
 	  "December, 2025/26": {
 	    "Banca PSU": {
@@ -33,7 +29,11 @@
 	        "Total Earned Prem": 344207.51,
 	        "Total Claim incurred in Period": -57282
 	      },
-	
-	• The GIC:GEP Exceeding 90% should be in red color.
-	• Please keep the UI as it is.
-	• Please don’t add, remove or change any part of the code unnecessarily. Just Implement the changes I've asked and give me the complete working code ready to paste.
+	• I want the data to be displayed as shown in the image.
+	• The Pie Chari is following this format:
+                eg:
+                       YTD December 2025's  Total GWP = 1272
+                        YTD December 2025's J&K's GWP = 872
+                         so in the chart J&K's portion is (872/1272) *100 rounded off  with% symbol.
+	•  Please don't add, remove or change any part of the code unnecessarily. Just Implement the changes I've asked and give me the complete working code ready to paste.
+	• Please don’t change the UI.
