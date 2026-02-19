@@ -1,73 +1,39 @@
-	• This work is for OverAllReview.jsx component's Inwards Fac Table.
-	• It should use the data from this file "src/data/INWARD_FAC.json".
-	• The Time Period displayed on the table header should be taken from the json file.
-	• The output should be displayed as shown in the image.
-	• This is how the data is stored in the json:
-	
+
+	• This work is for Marine.jsx component's Segment wise Report.
+	• It should fetch the data from this json file "src/data/LOB_AND_SEGMENT_WISE_DATA_02.json".
+	• The Time Period mentioned on top of the Table header i.e.(YTD December 25) should be displayed in a dropdown and according to the selected time period from the dropdown, the Time periods & data of these below 3 combined tables be displayed.
+	• The Time Period mentioned inside the Table i.e.(December 2025, YTD December 2025, YTD December 2024) headers should be taken from json and it should be dynamic.
+	• It should only use the Marine LOB data from all these time periods.
+	• The data should be displayed in this format as shown in the image.
+	• This is the first few lines of how the data is stored in json:
 	{
-	  "Time": {
-	    "December, 2025/26": {
-	      "FIRE": {
-	        "NOP": 2,
-	        "GWP": 15570485.76,
-	        "SI": 44173346931.823944,
-	        "GIC": -24959351,
-	        "GEP": 23675224.799999997
+	  "December, 2025/26": {
+	    "Banca PSU": {
+	      "Liability": {
+	        "Total NOP": 5,
+	        "Total Prem": 39364,
+	        "Total Earned Prem": 429004.2699999994,
+	        "Total Claim incurred in Period": 0
 	      },
-	      "ENGINEERING": {
-	        "NOP": 0,
-	        "GWP": 1440039.94,
-	        "SI": -408240016.2220001,
-	        "GIC": 152393,
-	        "GEP": 1695821.22
+	      "Engineering": {
+	        "Total NOP": 126,
+	        "Total Prem": 2093580,
+	        "Total Earned Prem": 1504056.7599999988,
+	        "Total Claim incurred in Period": -21014400
 	      },
-	      "MARINE": {
-	        "NOP": 0,
-	        "GWP": 0,
-	        "SI": 0,
-	        "GIC": 0,
-	        "GEP": 0
+	      "Fire": {
+	        "Total NOP": 97471,
+	        "Total Prem": 303325295.51,
+	        "Total Earned Prem": 259473748.60992658,
+	        "Total Claim incurred in Period": -102330200.49999997
 	      },
-	      "LIABILITY": {
-	        "NOP": 0,
-	        "GWP": 0,
-	        "SI": 0,
-	        "GIC": 0,
-	        "GEP": 12253.800000000017
-	      }
-	    },
-	    "April, 2025-26 - December, 2025-26": {
-	      "FIRE": {
-	        "NOP": 69,
-	        "GWP": 228155868.79000008,
-	        "SI": 250921148949.13873,
-	        "GIC": 101686847,
-	        "GEP": 223091601.94999996
+	      "Marine": {
+	        "Total NOP": 3,
+	        "Total Prem": 37250,
+	        "Total Earned Prem": 344207.51,
+	        "Total Claim incurred in Period": -57282
 	      },
-	      "ENGINEERING": {
-	        "NOP": 8,
-	        "GWP": 32432031.019999996,
-	        "SI": 7219975199.144634,
-	        "GIC": 71232777,
-	        "GEP": 36492581.32
-	      },
-	      "MARINE": {
-	        "NOP": 0,
-	        "GWP": 5315.42,
-	        "SI": 22618821.762046702,
-	        "GIC": 0,
-	        "GEP": 5315.42
-	      },
-	      "LIABILITY": {
-	        "NOP": 2,
-	        "GWP": 568712.81,
-	        "SI": 141300002.4855137,
-	        "GIC": 0,
-	        "GEP": 57321.73000000001
-	      }
-	    }
-	  }
-	}
 	
-	• Please don’t add, remove or change any part of this code unnecessarily.
-	• Just implement the changes I've asked to this uploaded OverAllReview.jsx file and give me the complete working code ready to paste.
+	• The GIC:GEP Exceeding 90% should be in red color.
+	• Please keep the UI as it is.
+	• Please don’t add, remove or change any part of the code unnecessarily. Just Implement the changes I've asked and give me the complete working code ready to paste.
